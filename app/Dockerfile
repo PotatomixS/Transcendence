@@ -1,5 +1,8 @@
-FROM node:20-alpine as dev
-RUN apk --update add postgresql-client
+#   ___    R U N   A S   D E V   ___
+#   ________________________________
+
+FROM    node:20-alpine as dev
+RUN     apk --update add postgresql-client
 
 #   ___    Installing Bash    ___
 
@@ -36,9 +39,35 @@ RUN yarn add class-validator class-transformer
 RUN npx prisma generate
 
 
-#   ___        Run NodeJS      ___
+
+#   ___   Installing Password enrpiter "Argon2"   ___
+
+RUN yarn add argon2
+
+
+
+#   ___        Build NodeJS      ___
 
 RUN npm run build
+
+
+
+
+#   ___        Run NodeJS      ___
+
+RUN chmod +x wait_for_postgres.sh
+
+ENTRYPOINT ["sh", "./wait_for_postgres.sh"]
+
+
+
+
+
+
+
+
+#   ___    R U N   A S   P R O D    ___
+#   ___________________________________
 
 FROM node:fermium-alpine as prod
 RUN apk --update add postgresql-client
@@ -60,12 +89,6 @@ COPY ./wait_for_postgres.sh /wait_for_postgres.sh
 
 RUN chmod +x /wait_for_postgres.sh
 
-
-
-
-
-
-
-ENTRYPOINT ["/wait_for_postgres.sh"]
+ENTRYPOINT ["chmod", "+x", "./wait_for_postgres.sh"]
 
 CMD ["node", "dist/main"]

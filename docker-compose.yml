@@ -5,22 +5,23 @@ services:
   # _____   API   _____ #
 
   api:
-    container_name: "hrm_api_${NODE_ENV}"
-    image: "hrm_api_${NODE_ENV}"
+    container_name: "app"
+    image: "app_image"
     environment:
       - NODE_ENV:${NODE_ENV}
+
     build:
       context: ./app
       target: "${NODE_ENV}"
       dockerfile: Dockerfile
 
-    entrypoint: ["npm", "run", "start:${NODE_ENV}"]
+    # entrypoint: [ "npm", "run", "start:${NODE_ENV}"]
+
     env_file:
       - .env
 
-    depends_on:
-      - pgadmin
-      - postgres
+    # depends_on:
+    #   - postgres
 
     ports:
       - 5555:5555
@@ -28,8 +29,10 @@ services:
     volumes:
       - ./app:/usr/src/app
       - /usr/src/app/node_modules
+
     networks:
       - nesjs-network
+
     restart: unless-stopped
 
 
@@ -51,12 +54,11 @@ services:
     ports:
       - ${POSTGRES_DB_PORT}:${POSTGRES_DB_PORT}
 
-    networks:
-      - nesjs-network
-
     # volumes:
     #  - ./pgdata/data:/var/lib/postgresql/data
 
+    networks:
+      - nesjs-network
 
 
 
@@ -66,14 +68,19 @@ services:
   pgadmin:
     links:
       - postgres:postgres
+
     container_name: pgadmin
     image: dpage/pgadmin4
-    volumes:
-      - ./pgdata/pgadmin:/root/.pgadmin
+
     env_file:
       - .env
+
     ports:
       - ${PGADMIN_PORT}:80
+
+    volumes:
+      - ./pgdata/pgadmin:/root/.pgadmin
+
     networks:
       - nesjs-network
 
@@ -85,18 +92,23 @@ services:
   nginx:
     image: nginx:stable-alpine
     container_name: nginx
-    volumes:
-      - ./nginx/templates:/etc/nginx/templates
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    environment:
-      - NGINX_PORT=${NGINX_PORT}
-      - BACKEND_PORT=${BACKEND_PORT}
-    ports:
-      - 80:${NGINX_PORT}
+
     depends_on:
       - api
       - postgres
       - pgadmin
+
+    environment:
+      - NGINX_PORT=${NGINX_PORT}
+      - BACKEND_PORT=${BACKEND_PORT}
+
+    ports:
+      - 80:${NGINX_PORT}
+
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
     networks:
       - nesjs-network
 
