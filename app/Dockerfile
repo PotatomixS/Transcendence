@@ -38,6 +38,7 @@ RUN yarn add @prisma/client
 RUN yarn add class-validator class-transformer
 RUN npx prisma generate
 
+RUN yarn add @nestjs/config
 
 
 #   ___   Installing Password enrpiter "Argon2"   ___
