@@ -4,6 +4,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { Injectable, Post } from "@nestjs/common";
 import { AuthDto } from './dto';
 import * as argon from 'argon2';
+import { JwtService } from "@nestjs/jwt";
 
 
 
@@ -13,7 +14,10 @@ import * as argon from 'argon2';
 @Injectable({})
 export class AuthService
 {
-	constructor(private prisma: PrismaService) {}
+	constructor(
+		private prisma: PrismaService,
+		private jwt: JwtService
+	) {}
    
 	// _____    S I G N     U P     ______
 	// ___________________________________

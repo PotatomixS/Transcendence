@@ -38,7 +38,12 @@ RUN yarn add @prisma/client
 RUN yarn add class-validator class-transformer
 RUN npx prisma generate
 
+
+
+#   ___   Installing Config Module   ___
+
 RUN yarn add @nestjs/config
+
 
 
 #   ___   Installing Password enrpiter "Argon2"   ___
@@ -47,10 +52,16 @@ RUN yarn add argon2
 
 
 
+#   ___   Installing Passport for auth   ___
+
+RUN yarn add @nestjs/passport passport
+RUN yarn add @nestjs/jwt passport-jwt
+RUN yarn add -D @types/passport-jwt
+
+
 #   ___        Build NodeJS      ___
 
 RUN npm run build
-
 
 
 
