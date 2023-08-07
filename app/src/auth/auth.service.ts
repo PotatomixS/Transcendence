@@ -5,9 +5,7 @@ import { Injectable, Post } from "@nestjs/common";
 import { AuthDto } from './dto';
 import * as argon from 'argon2';
 import { JwtService } from "@nestjs/jwt";
-
-
-
+import { ConfigService } from '@nestjs/config'
 
 
 
@@ -16,7 +14,8 @@ export class AuthService
 {
 	constructor(
 		private prisma: PrismaService,
-		private jwt: JwtService
+		private jwt: JwtService,
+		private config: ConfigService
 	) {}
    
 	// _____    S I G N     U P     ______
@@ -44,12 +43,10 @@ export class AuthService
 					hash,																				//  No debería ser "hash: hash" ? 
 				},
 			});
-			delete user.hash;
 
-			// ___ Return the saved user ___
+	// 		___ Return the savd user ___
 
-			return user;
-
+			return this.signToken(user.id, user.email);
 		}
 		catch (error)
 		{
@@ -107,10 +104,30 @@ export class AuthService
 
 
 
-
 		// ___ Send back the user ___
 
-		delete user.hash;
-		return user;
+		return this.signToken(user.id, user.email);
+	}
+
+	async signToken(userId: number, email: string) : Promise< {access_token: string} > {
+		const payload = {
+			sub: userId,
+			email,
+		};
+
+		const secret = this.config.get('JWT_SECRET');
+		
+		const token = await this.jwt.signAsync(
+			payload,
+			{
+				expiresIn: '15m',
+				secret: secret,
+			}
+		);
+		
+		
+		return{
+			access_token: token, 
+		};
 	}
 }
