@@ -14,4 +14,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt', )
             secretOrKey: config.get('JWT_SECRET'),
         });
     }
+
+	// ___ Decodes Token ___
+
+    validate(payload: any) {
+        return payload;
+    }
 }
