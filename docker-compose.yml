@@ -63,6 +63,7 @@ services:
     networks:
       - nesjs-network
 
+    restart: on-failure
 
 
 

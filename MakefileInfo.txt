@@ -17,3 +17,8 @@ docker-compose up
     y username y password son <POSTGRES_USER> y <POSTGRES_PASSWORD>
     donde <> son variables en el .env
 */
+
+/*  SI TIENES ERRORES RAROS PRUEBA A HACER ESTO
+    1- borra el contenido de la carpeta pgdata>data
+    2- levanta el docker un par de veces
+*/
