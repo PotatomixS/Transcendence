@@ -79,9 +79,6 @@ services:
     env_file:
       - .env
 
-    ports:
-      - ${PGADMIN_PORT}:80
-
     volumes:
       - ./pgdata/pgadmin:/root/.pgadmin
 
