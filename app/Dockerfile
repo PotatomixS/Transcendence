@@ -70,11 +70,11 @@ RUN npm run build
 
 EXPOSE 3000
 
-COPY ./wait_for_postgres.sh /wait_for_postgres.sh
+#COPY ./wait_for_postgres.sh /wait_for_postgres.sh
 
-RUN chmod +x wait_for_postgres.sh
+#RUN chmod +x wait_for_postgres.sh
 
-ENTRYPOINT ["sh", "./wait_for_postgres.sh"]
+#ENTRYPOINT ["sh", "./wait_for_postgres.sh"]
 
 
 
@@ -102,13 +102,13 @@ COPY . .
 
 COPY --from=dev /usr/src/app/dist ./dist
 
-COPY ./wait_for_postgres.sh /wait_for_postgres.sh
+#COPY ./wait_for_postgres.sh /wait_for_postgres.sh
 
 EXPOSE 8080
 
-RUN chmod +x /wait_for_postgres.sh
+#RUN chmod +x /wait_for_postgres.sh
 
-ENTRYPOINT ["chmod", "+x", "./wait_for_postgres.sh"]
+#ENTRYPOINT ["chmod", "+x", "./wait_for_postgres.sh"]
 
 # run app
 CMD ["node", "dist/main"]
