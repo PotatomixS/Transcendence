@@ -1,7 +1,7 @@
 #   ___    R U N   A S   D E V   ___
 #   ________________________________
 
-FROM    node:20-alpine as dev
+FROM    node:20-alpine AS dev
 RUN     apk --update add postgresql-client
 
 #   ___    Installing Bash    ___
@@ -59,6 +59,7 @@ RUN yarn add @nestjs/jwt passport-jwt
 RUN yarn add -D @types/passport-jwt
 
 
+
 #   ___        Build NodeJS      ___
 
 RUN npm run build
@@ -66,6 +67,8 @@ RUN npm run build
 
 
 #   ___        Run NodeJS      ___
+
+EXPOSE 3000
 
 COPY ./wait_for_postgres.sh /wait_for_postgres.sh
 
@@ -101,8 +104,11 @@ COPY --from=dev /usr/src/app/dist ./dist
 
 COPY ./wait_for_postgres.sh /wait_for_postgres.sh
 
+EXPOSE 8080
+
 RUN chmod +x /wait_for_postgres.sh
 
 ENTRYPOINT ["chmod", "+x", "./wait_for_postgres.sh"]
 
+# run app
 CMD ["node", "dist/main"]

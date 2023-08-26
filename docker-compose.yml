@@ -2,43 +2,60 @@ version: '3.8'
 
 services:
 
-  # _____   API   _____ #
+  # _____   NestJS API   _____ #
 
   api:
-    container_name: "app"
-    image: "app_image"
-    environment:
-      - NODE_ENV:${NODE_ENV}
-
     build:
-      context: ./app
-      target: "${NODE_ENV}"
       dockerfile: Dockerfile
+      context: ./app
+      # Only build development stage from Dockerfile
+      target: ${NODE_ENV}
+    # Mount our host dir to the docker container
+    # Mount api directory (./app) to (:) docker container (/usr/src/app)
+    # Reflect File changes from host to container
 
-    # entrypoint: [ "npm", "run", "start:${NODE_ENV}"]
-
-    env_file:
-      - .env
-
-    links:
-      - postgres:postgres
-
-    depends_on:
-      - postgres
-
-    ports:
-      - 5555:5555
-    
     volumes:
       - ./app:/usr/src/app
-      - /usr/src/app/node_modules
+      - /usr/src/app/node_modules/
+    # Run in debug mode: npm run start:debug --> Also start your vscode debugger
+    # Run in dev mode: npm run start:dev
 
-    networks:
-      - nesjs-network
+    command: npm run start:debug
 
-    restart: unless-stopped
+    depends_on: 
+      - postgres
+
+    environment:
+      DATABASE_URL: "postgresql://user:secret@postgres:5432/db_nestjs?schema=public"
+      NODE_ENV: ${NODE_ENV}
+      JWT_SECRET: hard_to_guess_secret_123
+      PORT: ${BACKEND_PORT}
+
+    ports:
+      - ${BACKEND_PORT}:${BACKEND_PORT}
+      - ${BACKEND_DEBUG_PORT}:${BACKEND_DEBUG_PORT}
 
 
+
+# _____   Angular Frontend  _____ #
+
+  frontend:
+    build:
+      dockerfile: Dockerfile
+      context: ./app-frontend
+      target: ${NODE_ENV}
+
+    command: npm run start
+
+    volumes:
+      - ./app-frontend:/usr/frontend/src/app
+      - /usr/frontend/src/app/node_modules
+
+    ports:
+      - ${FRONTEND_PORT}:${FRONTEND_PORT}
+
+    links:
+      - api
 
 
 
@@ -90,28 +107,28 @@ services:
 
   # _____   Nginx   _____ #
 
-  nginx:
-    image: nginx:stable-alpine
-    container_name: nginx
+  #nginx:
+  #  image: nginx:stable-alpine
+  #  container_name: nginx
 
-    depends_on:
-      - api
-      - postgres
-      - pgadmin
+  #  depends_on:
+  #    - api
+  #    - postgres
+  #    - pgadmin
 
-    environment:
-      - NGINX_PORT=${NGINX_PORT}
-      - BACKEND_PORT=${BACKEND_PORT}
+  #  environment:
+  #    - NGINX_PORT=${NGINX_PORT}
+  #    - BACKEND_PORT=${BACKEND_PORT}
 
-    ports:
-      - 80:${NGINX_PORT}
+  #  ports:
+  #    - 80:${NGINX_PORT}
 
-    volumes:
-      - ./nginx/templates:/etc/nginx/templates
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #  volumes:
+  #    - ./nginx/templates:/etc/nginx/templates
+  #    - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
 
-    networks:
-      - nesjs-network
+  #  networks:
+  #    - nesjs-network
 
 
 
