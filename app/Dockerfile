@@ -70,11 +70,11 @@ RUN npm run build
 
 EXPOSE 3000
 
-#COPY ./wait_for_postgres.sh /wait_for_postgres.sh
+COPY ./wait_for_postgres.sh /wait_for_postgres.sh
 
-#RUN chmod +x wait_for_postgres.sh
+RUN chmod +x wait_for_postgres.sh
 
-#ENTRYPOINT ["sh", "./wait_for_postgres.sh"]
+ENTRYPOINT ["sh", "./wait_for_postgres.sh"]
 
 
 

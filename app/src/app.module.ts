@@ -4,6 +4,9 @@ import { UserModule } from './user/user.module';
 import { BookmarkModule } from './bookmark/bookmark.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
+//estos estan de forma temporal
+import { AppService } from './app.service';
+import { AppController } from './app.controller';
 
 @Module({
   imports:  [
@@ -15,5 +18,7 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true,
     }),
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
