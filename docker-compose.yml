@@ -53,7 +53,7 @@ services:
       - /usr/frontend/src/app/node_modules
 
     ports:
-      - ${FRONTEND_PORT}:${FRONTEND_PORT}
+      - 80:${FRONTEND_PORT}
 
     networks:
       - nesjs-network
@@ -105,33 +105,6 @@ services:
     networks:
       - nesjs-network
 
-
-
-
-  # _____   Nginx   _____ #
-
-  #nginx:
-  #  image: nginx:stable-alpine
-  #  container_name: nginx
-
-  #  depends_on:
-  #    - api
-  #    - postgres
-  #    - pgadmin
-
-  #  environment:
-  #    - NGINX_PORT=${NGINX_PORT}
-  #    - BACKEND_PORT=${BACKEND_PORT}
-
-  #  ports:
-  #    - 80:${NGINX_PORT}
-
-  #  volumes:
-  #    - ./nginx/templates:/etc/nginx/templates
-  #    - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-
-  #  networks:
-  #    - nesjs-network
 
 
 
