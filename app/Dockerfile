@@ -39,7 +39,7 @@ RUN yarn add class-validator class-transformer
 RUN npx prisma generate
 
 
-
+ 
 #   ___   Installing Config Module   ___
 
 RUN yarn add @nestjs/config
@@ -63,6 +63,7 @@ RUN yarn add -D @types/passport-jwt
 #   ___        Build NodeJS      ___
 
 RUN npm run build
+RUN npm install @nestjs/common
 
 
 
