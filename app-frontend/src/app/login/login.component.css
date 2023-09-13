@@ -1,0 +1,59 @@
+
+
+video {
+    object-fit: cover;
+    height: 100%;
+    width: 100%;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.video-wrapper {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wrapper {
+    width: 480px;
+    height: 300px;
+    background-color: white;
+    border-radius: 1%;
+    border-width: 1px;
+    border-color: black;
+}
+
+.wrapper button {
+    position: center;
+    width: 200px;
+    height: 50px;
+    background-color: #19324d;
+    border-color:#1f3f60;
+    color: white;
+    font-size: 19px;
+    cursor: pointer;
+    margin-top: 100px;
+    border-radius: 3%;
+    
+}
+
+.wrapper button:hover {
+    background-color: white;
+    color: #19324d;
+    border: none
+}
+
+.wrapper img {
+    position: center;
+    margin-top: 100px;
+}
