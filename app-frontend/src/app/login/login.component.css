@@ -2,15 +2,14 @@
 
 video {
     object-fit: cover;
+    position: absolute;
     height: 100%;
     width: 100%;
-
-    position: absolute;
     top: 0;
     left: 0;
 }
 
-.video-wrapper {
+.video-wrapper .video{
     position: relative;
 
     width: 100%;
@@ -31,29 +30,37 @@ video {
     border-radius: 1%;
     border-width: 1px;
     border-color: black;
+    overflow: hidden;
+    position: relative;
+    opacity: 0.98;
 }
 
 .wrapper button {
     position: center;
     width: 200px;
     height: 50px;
-    background-color: #19324d;
-    border-color:#1f3f60;
+    font-size: 18px;
+    margin-top: 20px;
+    
+    background-color: black;
     color: white;
-    font-size: 19px;
     cursor: pointer;
-    margin-top: 100px;
+    
+    border: 2px solid;
     border-radius: 3%;
+    border-color: white;
     
 }
 
 .wrapper button:hover {
     background-color: white;
-    color: #19324d;
-    border: none
+    border-color: black;
+    color: black;
 }
 
-.wrapper img {
+.wrapper .logo img {
     position: center;
-    margin-top: 100px;
+    margin-top: 80px;
+    width: 100px;
+    height: 100px;
 }
