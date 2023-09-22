@@ -60,6 +60,15 @@ RUN yarn add -D @types/passport-jwt
 
 
 
+#   ___   Installing for photo saving   ___
+
+RUN npm install express
+RUN npm install multer
+RUN npm install --save-dev nodemon
+
+RUN node /js/app.js
+
+
 #   ___        Build NodeJS      ___
 
 RUN npm run build
