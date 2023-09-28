@@ -9,18 +9,16 @@
 
 .main-header .logo img {
     position: absolute;
-    width: 90px;
-    height: 20px;
+    height: 60%;
     top: 25%;
     left: 2%;
 }
 
 .main-header .profile_pic img {
     position: absolute;
-    width: 35px;
-    height: 35px;
+    height: 100%;
     top: 5%;
-    right: 15%;
+    right: 5%;
 }
 
 .main-header .username select {
@@ -29,8 +27,9 @@
     border-color: black;
     top: 15%;
     right: 1%;
-    height: 28px;
-    width: 150px;
+    height: 80%;
     border: 0px;
     cursor: pointer;
+    color: white;
+    min-width:100px;
 }
