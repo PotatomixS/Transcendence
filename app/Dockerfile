@@ -39,7 +39,7 @@ RUN yarn add class-validator class-transformer
 RUN npx prisma generate
 
 
-
+ 
 #   ___   Installing Config Module   ___
 
 RUN yarn add @nestjs/config
@@ -72,6 +72,7 @@ RUN npm install --save-dev nodemon
 #   ___        Build NodeJS      ___
 
 RUN npm run build
+RUN npm install @nestjs/common
 
 
 
