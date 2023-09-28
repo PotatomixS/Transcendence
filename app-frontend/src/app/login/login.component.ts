@@ -8,6 +8,7 @@ import { Component } from '@angular/core';
 
 export class LoginComponent
 {
+    show=true
     constructor() {}
     ngOnInit() {}
 }
