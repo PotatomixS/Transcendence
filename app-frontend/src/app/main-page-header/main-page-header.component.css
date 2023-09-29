@@ -36,6 +36,7 @@
     border-color: black;
     cursor: pointer;
     color: white;
+    border: 0pxs;
     max-height: 40px;
 }
 
