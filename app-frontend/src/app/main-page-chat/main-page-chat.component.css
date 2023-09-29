@@ -1,0 +1,8 @@
+.main-chat {
+    position: absolute;
+    background-color: blue;
+    top: 40px;
+    right:0;
+    width: 20%;
+    height: 100%;
+}
