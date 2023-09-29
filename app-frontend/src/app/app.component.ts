@@ -7,5 +7,5 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'Transcendence';
-  show = true;
+  show = false; //TODO Esto es true mientras no se tenga el token del cliente
 }
