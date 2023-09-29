@@ -7,29 +7,51 @@
     height: 7%;
 }
 
-.main-header .logo img {
-    position: absolute;
-    height: 60%;
-    top: 25%;
-    left: 2%;
+.main-header div{
+    position: relative;
+    height: 90%;
+    top: 5%;
 }
 
-.main-header .profile_pic img {
-    position: absolute;
+.main-header .logo{
+    float: left;
+    left: 10px;
+}
+
+.main-header .profile_pic{
+    float: right;
+}
+
+.main-header .username{
+    float: right;
+}
+
+.main-header div *{
     height: 100%;
-    top: 5%;
-    right: 5%;
 }
 
 .main-header .username select {
-    position: absolute;
+    float: right;
     background-color: black;
     border-color: black;
-    top: 15%;
-    right: 1%;
-    height: 80%;
-    border: 0px;
     cursor: pointer;
     color: white;
-    min-width:100px;
+    max-height: 40px;
 }
+
+/*.main-header .logo img {
+    position: relative;
+    float: left;
+    width: auto;
+    height: 80%;
+    top: 10%;
+    left: 10px;
+}
+
+.main-header .profile_pic img {
+    float: right;
+    height: 100%;
+    top: 5%;
+}
+
+*/
