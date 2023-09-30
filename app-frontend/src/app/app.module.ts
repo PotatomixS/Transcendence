@@ -7,9 +7,10 @@ import { LoginComponent } from './login/login.component';
 import { MainPageHeaderComponent } from './main-page-header/main-page-header.component';
 import { ProfilePageComponent } from './profile-page/profile-page.component';
 import { MainPageChatComponent } from './main-page-chat/main-page-chat.component';
+import { PongPageComponent } from './pong-page/pong-page.component';
 
 @NgModule({
-  declarations: [ AppComponent, LoginComponent, MainPageHeaderComponent, ProfilePageComponent, MainPageChatComponent ],
+  declarations: [ AppComponent, LoginComponent, MainPageHeaderComponent, ProfilePageComponent, MainPageChatComponent, PongPageComponent ],
   imports: [ BrowserModule, AppRoutingModule],
   providers: [],
   bootstrap: [AppComponent]

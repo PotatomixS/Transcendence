@@ -18,15 +18,28 @@
 .main-header .logo{
     float: left;
     left: 10px;
+    cursor: pointer;
 }
 
-.main-header .profile_pic{
+.main-header .profile{
     float: right;
     margin-right: 10px;
+    cursor: pointer;
 }
 
-.main-header .username{
+.main-header .profile p {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    position: relative;
     float: right;
+    color: white;
+    text-decoration: none;
+    font-family: sans-serif;
+}
+
+.main-header .profile p:hover {
+    text-decoration: underline white;
+    text-decoration-thickness: 2px;
 }
 
 .main-header .logout {
@@ -38,6 +51,7 @@
     height: 100%;
 }
 
+<<<<<<< HEAD
 .main-header .username a {
     position: relative;
     cursor: pointer;
@@ -54,15 +68,12 @@
 }
 
 .main-header .profile_pic img {
+=======
+.main-header .profile img {
+>>>>>>> main
     position: relative;
     height: 80%;
     border-radius: 50%;
-    top: 10%;
-}
-
-.main-header .logo img {
-    position: relative;
-    height: 80%;
     top: 10%;
 }
 
