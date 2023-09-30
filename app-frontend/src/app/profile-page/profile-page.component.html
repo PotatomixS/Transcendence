@@ -1,1 +1,21 @@
-<p>profile-page works!</p>
+<div class="mainComponent">
+    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+        <div class="profile-image">
+            <input type="file" class="file-input" (change)="onFileSelected($event)" #fileUpload>
+            <div class="file-upload">
+                {{fileName || "No file uploaded yet."}}
+                <br>
+                <button mat-mini-fab color="primary" class="upload-btn" (click)="fileUpload.click()">
+                    Upload image
+                </button>
+            </div>
+        </div>
+        <div class="profile-form">
+            <label for="username">Nombre de usuario: </label>
+            <input id="username" type="text" formControlName="username">
+
+            <p>Completa el formulario para habilitar el botón.</p>
+            <button type="submit" [disabled]="!profileForm.valid">Guardar</button>
+        </div>
+    </form>
+</div>
