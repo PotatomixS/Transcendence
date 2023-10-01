@@ -10,6 +10,7 @@ import { FormControl, FormGroup } from '@angular/forms';
 export class ProfilePageComponent {
   profileForm = new FormGroup({
     username: new FormControl('Default Username'),
+    factor_auth: new FormControl(false),
   });
 
   fileName = '';

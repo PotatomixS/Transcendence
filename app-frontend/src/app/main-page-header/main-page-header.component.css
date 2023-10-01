@@ -33,13 +33,12 @@
 }
 
 .main-header .profile p {
-    margin-top: 10px;
-    margin-bottom: 0px;
     position: relative;
     float: right;
     color: white;
     text-decoration: none;
     font-family: sans-serif;
+    font-size: 1vw;
 }
 
 .main-header .profile p:hover {
