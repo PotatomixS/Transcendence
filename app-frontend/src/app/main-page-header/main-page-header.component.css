@@ -4,8 +4,10 @@
     top:0;
     left:0;
     width: 100%;
-    height: 10%;
-    min-height: 40px;
+    height: 6%;
+    box-sizing: border-box;
+    border: 2px solid;
+    border-color: white;
 }
 
 .main-header div{
@@ -15,9 +17,12 @@
     right: 2%;
 }
 
-.main-header .logo{
+.main-header .logo {
+    position: relative;
     float: left;
     left: 10px;
+    height: 75%;
+    top: 15%;
     cursor: pointer;
 }
 
@@ -29,7 +34,7 @@
 
 .main-header .profile p {
     margin-top: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 0px;
     position: relative;
     float: right;
     color: white;
@@ -51,26 +56,7 @@
     height: 100%;
 }
 
-<<<<<<< HEAD
-.main-header .username a {
-    position: relative;
-    cursor: pointer;
-    color: white;
-    top: 30%;
-    height: 90%;
-    text-decoration: none;
-    font-family: sans-serif;
-}
-
-.main-header .username a:hover {
-    text-decoration: underline white;
-    text-decoration-thickness: 2px;
-}
-
-.main-header .profile_pic img {
-=======
 .main-header .profile img {
->>>>>>> main
     position: relative;
     height: 80%;
     border-radius: 50%;

@@ -8,6 +8,7 @@ import { MainPageHeaderComponent } from './main-page-header/main-page-header.com
 import { ProfilePageComponent } from './profile-page/profile-page.component';
 import { MainPageChatComponent } from './main-page-chat/main-page-chat.component';
 import { PongPageComponent } from './pong-page/pong-page.component';
+import { SharedService } from './shared.service';
 
 @NgModule({
   declarations: [ AppComponent, LoginComponent, MainPageHeaderComponent, ProfilePageComponent, MainPageChatComponent, PongPageComponent ],
@@ -15,4 +16,7 @@ import { PongPageComponent } from './pong-page/pong-page.component';
   providers: [],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule 
+{
+
+}

@@ -1,6 +1,6 @@
-<div style="text-align: center;" *ngIf="show">
+<div style="text-align: center;" *ngIf="ShowLogin">
   <app-login></app-login>
 </div>
-<app-main-page-header *ngIf="!show"></app-main-page-header>
-<router-outlet *ngIf="!show"></router-outlet>
-<app-main-page-chat *ngIf="!show"></app-main-page-chat>
+<app-main-page-header *ngIf="!ShowLogin"></app-main-page-header>
+<router-outlet *ngIf="!ShowLogin"></router-outlet>
+<app-main-page-chat *ngIf="!ShowLogin"></app-main-page-chat>
