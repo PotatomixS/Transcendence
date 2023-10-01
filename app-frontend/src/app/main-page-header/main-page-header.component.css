@@ -4,7 +4,14 @@
     top:0;
     left:0;
     width: 100%;
+<<<<<<< HEAD
     height: 40px;
+=======
+    height: 6%;
+    box-sizing: border-box;
+    border: 2px solid;
+    border-color: white;
+>>>>>>> rgirondo
 }
 
 .main-header div{
@@ -14,9 +21,12 @@
     right: 2%;
 }
 
-.main-header .logo{
+.main-header .logo {
+    position: relative;
     float: left;
     left: 10px;
+    height: 75%;
+    top: 15%;
     cursor: pointer;
 }
 
@@ -28,7 +38,7 @@
 
 .main-header .profile p {
     margin-top: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 0px;
     position: relative;
     float: right;
     color: white;
