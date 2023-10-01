@@ -1,17 +1,11 @@
 <div style="text-align: center;" *ngIf="ShowLogin">
   <app-login></app-login>
 </div>
-<<<<<<< HEAD
 
-<app-main-page-header *ngIf="!show"></app-main-page-header>
+<app-main-page-header *ngIf="!ShowLogin"></app-main-page-header>
 
 <div class="main">
-  <router-outlet *ngIf="!show"></router-outlet>
+  <router-outlet *ngIf="!ShowLogin"></router-outlet>
 </div>
 
-<app-main-page-chat class="chat" *ngIf="!show"></app-main-page-chat>
-=======
-<app-main-page-header *ngIf="!ShowLogin"></app-main-page-header>
-<router-outlet *ngIf="!ShowLogin"></router-outlet>
-<app-main-page-chat *ngIf="!ShowLogin"></app-main-page-chat>
->>>>>>> rgirondo
+<app-main-page-chat class="chat" *ngIf="!ShowLogin"></app-main-page-chat>

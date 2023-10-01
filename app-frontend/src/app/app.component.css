@@ -1,17 +1,17 @@
 .chat
 {
     position: absolute;
-    top: 40px;
+    top: 6%;
     right:0;
     width: 20%;
-    height: 100%;
+    height: 94%;
 }
 
 .main
 {
     position: absolute;
-    top: 40px;
+    top: 6%;
     left: 0;
     width: 80%;
-    height: 100%;
+    height: 94%;
 }
