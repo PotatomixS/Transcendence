@@ -4,8 +4,8 @@
 
 <app-main-page-header *ngIf="!ShowLogin"></app-main-page-header>
 
-<div class="main">
-  <router-outlet *ngIf="!ShowLogin"></router-outlet>
+<div *ngIf="!ShowLogin" class="main">
+  <router-outlet></router-outlet>
 </div>
 
 <app-main-page-chat class="chat" *ngIf="!ShowLogin"></app-main-page-chat>
