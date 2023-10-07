@@ -11,7 +11,7 @@ services:
       # Only build development stage from Dockerfile
       target: ${NODE_ENV}
     # Mount our host dir to the docker container
-    # Mount api directory (./app) to (:) docker container (/usr/src/app)
+    # Mount api directory (./app) to (:) docker container (/usr/src/app) 
     # Reflect File changes from host to container
 
     volumes:
