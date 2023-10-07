@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface Profile {
-  nick: string;
+  title: string;
 }
 
 @Injectable({
@@ -20,9 +20,10 @@ export class ProfileService {
       });
       
       const params: Profile = {
-        nick: "123"
+        title: "123"
       };
   
-      return this.http.post<Profile>("api/auth/signup", params, { 'headers': headers });
+      //return this.http.post<Profile>("api/auth/signup", params, { 'headers': headers });
+      return this.http.get<Profile>("api");
   }
 }

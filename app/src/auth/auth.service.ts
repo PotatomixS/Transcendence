@@ -2,7 +2,6 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { PrismaClient, Prisma } from '@prisma/client'
 import { ForbiddenException } from '@nestjs/common';
 import { Injectable, Post } from "@nestjs/common";
-import { AuthDto } from './dto';
 import * as argon from 'argon2';
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from '@nestjs/config'

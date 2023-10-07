@@ -22,7 +22,7 @@ export class AppComponent
 	
 	constructor(private service: TestService, private http: HttpClient, private route: ActivatedRoute) 
 	{
-		this.ShowLogin = false;
+		this.ShowLogin = true;
 		//alert(this.getQueryParameter("code"));
 	}
 
@@ -56,7 +56,7 @@ export class AppComponent
 			'redirect_uri': redirectUri
 		};
 		
-		this.getToken(params).subscribe(data => console.log(data));
+		//this.getToken(params).subscribe(data => console.log(data));
 	}
 
 	getToken(params: CodePost): Observable<CodePost>
