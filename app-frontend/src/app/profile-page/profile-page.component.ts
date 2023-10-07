@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { Profile, ProfileService } from './profile.service';
+import { Profile, ProfileService } from '../services/profile-service/profile.service';
 import { Observable } from 'rxjs';
 
 @Component({

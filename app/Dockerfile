@@ -65,6 +65,9 @@ RUN yarn add -D @types/passport-jwt
 RUN npm run build
 RUN npm install @nestjs/common
 
+#   ___        AXIOS             ___
+RUN npm install axios
+
 
 
 #   ___        Run NodeJS      ___

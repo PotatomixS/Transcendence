@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http'
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface Profile {
@@ -13,7 +13,16 @@ export class ProfileService {
 
   constructor(private http: HttpClient) { }
 
-  getProfileData(): Observable<Profile> {
-    return this.http.post<Profile>('api');
+  getProfile(): Observable<Profile> {
+    const headers = new HttpHeaders(
+      {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      });
+      
+      const params: Profile = {
+        nick: "123"
+      };
+  
+      return this.http.post<Profile>("api/auth/signup", params, { 'headers': headers });
   }
 }
