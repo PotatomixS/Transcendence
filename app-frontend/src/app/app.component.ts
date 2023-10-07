@@ -56,7 +56,7 @@ export class AppComponent
 			'redirect_uri': redirectUri
 		};
 		
-		//this.getToken(params).subscribe(data => console.log(data));
+		this.getToken(params).subscribe(data => console.log(data));
 	}
 
 	getToken(params: CodePost): Observable<CodePost>

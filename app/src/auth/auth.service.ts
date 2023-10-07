@@ -2,6 +2,7 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { PrismaClient, Prisma } from '@prisma/client'
 import { ForbiddenException } from '@nestjs/common';
 import { Injectable, Post } from "@nestjs/common";
+import { AuthDto } from './dto';
 import * as argon from 'argon2';
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from '@nestjs/config'
@@ -47,7 +48,7 @@ export class AuthService
 		//	Look for user in db
 
 		const user_gotten = await this.get_user(str);
-		
+
 		const user = await this.prisma.user.findUnique
 		({
 			where: 
