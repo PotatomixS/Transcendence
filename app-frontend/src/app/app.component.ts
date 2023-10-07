@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { Test, TestService } from './services/test-service/test.service';
 import { SharedService } from './shared.service';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
@@ -15,13 +14,12 @@ export class AppComponent
 {  
 	
 	title = 'Transcendence';
-	testValue: Observable<Test> = this.service.getTest(); //temp
 	ShowLogin: boolean;
 	TwoFactorAuth: boolean;
 	private apiUrl = 'https://api.intra.42.fr/oauth/token';
 	
 	
-	constructor(private service: TestService, private http: HttpClient, private route: ActivatedRoute) 
+	constructor(private http: HttpClient, private route: ActivatedRoute) 
 	{
 		this.ShowLogin = false;
 		this.TwoFactorAuth = true;
