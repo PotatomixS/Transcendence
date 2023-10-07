@@ -1,0 +1,38 @@
+.mainComponent
+{
+    width: 100%;
+    height: 100%;
+}
+
+.formContainer
+{
+    padding: 10%;
+}
+
+.file-input {
+    display: none;
+}
+
+.profile-image, .profile-form {
+    float: left;
+    margin-right: 30px;
+}
+
+label, p, button, input {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    font-size: 1vw;
+}
+
+button {
+    border-radius: 10%;
+    background-color: white;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.box {
+    background-color: white;
+    border: 2px solid darkgray;
+    padding: 10px;
+    border-radius: 10px;
+}

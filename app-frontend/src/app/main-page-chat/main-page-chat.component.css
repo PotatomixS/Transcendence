@@ -1,0 +1,11 @@
+.main-chat {
+    position: absolute;
+    background-color: black;
+    right: 0px;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: 2px solid;
+    border-top: 2px;
+    border-color: white;
+}
