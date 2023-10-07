@@ -1,9 +1,9 @@
-<div style="text-align: center;" *ngIf="ShowLogin">
+<div style="text-align: center;" class="login" *ngIf="ShowLogin">
   <app-login></app-login>
 </div>
 
 <app-main-page-header *ngIf="!ShowLogin"></app-main-page-header>
-<p style="color: white">{{(testValue | async)?.title}}</p>
+
 <div *ngIf="!ShowLogin" class="main">
   <router-outlet></router-outlet>
 </div>

@@ -9,12 +9,13 @@ import { ProfilePageComponent } from './profile-page/profile-page.component';
 import { MainPageChatComponent } from './main-page-chat/main-page-chat.component';
 import { PongPageComponent } from './pong-page/pong-page.component';
 import { ReactiveFormsModule } from '@angular/forms';
+import { SharedService } from './shared.service';
 import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [ AppComponent, LoginComponent, MainPageHeaderComponent, ProfilePageComponent, MainPageChatComponent, PongPageComponent ],
   imports: [ BrowserModule, AppRoutingModule, ReactiveFormsModule, HttpClientModule],
-  providers: [],
+  providers: [SharedService],
   bootstrap: [AppComponent]
 })
 export class AppModule 

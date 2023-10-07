@@ -17,12 +17,14 @@ export class AppComponent
 	title = 'Transcendence';
 	testValue: Observable<Test> = this.service.getTest(); //temp
 	ShowLogin: boolean;
+	TwoFactorAuth: boolean;
 	private apiUrl = 'https://api.intra.42.fr/oauth/token';
 	
 	
 	constructor(private service: TestService, private http: HttpClient, private route: ActivatedRoute) 
 	{
-		this.ShowLogin = true;
+		this.ShowLogin = false;
+		this.TwoFactorAuth = true;
 		//alert(this.getQueryParameter("code"));
 	}
 
@@ -56,7 +58,7 @@ export class AppComponent
 			'redirect_uri': redirectUri
 		};
 		
-		this.getToken(params).subscribe(data => console.log(data));
+		//this.getToken(params).subscribe(data => console.log(data));
 	}
 
 	getToken(params: CodePost): Observable<CodePost>

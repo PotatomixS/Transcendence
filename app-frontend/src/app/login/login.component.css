@@ -64,3 +64,22 @@ video {
     width: 100px;
     height: 100px;
 }
+
+.wrapper .code-form input
+{
+    width: 9%;
+    height: 70px;
+    margin-left: 5px;
+    margin-right: 5px;
+    text-align: center;
+    font-size: 5vw;
+    border: 1px none;
+    background-color: black;
+    color: white;
+    opacity: 0.9;
+}
+
+.wrapper .code-form input:focus
+{
+    outline: none;
+}
