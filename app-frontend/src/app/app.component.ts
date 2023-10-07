@@ -20,7 +20,7 @@ export class AppComponent
 	private apiUrl = 'https://api.intra.42.fr/oauth/token';
 	
 	
-	constructor(private http: HttpClient, private route: ActivatedRoute) 
+	constructor(private service: TestService, private http: HttpClient, private route: ActivatedRoute) 
 	{
 		this.ShowLogin = false;
 		//alert(this.getQueryParameter("code"));
