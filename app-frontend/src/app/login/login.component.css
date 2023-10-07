@@ -1,0 +1,85 @@
+
+
+video {
+    object-fit: cover;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+}
+
+.video-wrapper .video{
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wrapper {
+    width: 480px;
+    height: 300px;
+    background-color: white;
+    border-radius: 1%;
+    border-width: 1px;
+    border-color: black;
+    overflow: hidden;
+    position: relative;
+    opacity: 0.98;
+}
+
+.wrapper button {
+    position: center;
+    width: 200px;
+    height: 50px;
+    font-size: 17px;
+    margin-top: 20px;
+    
+    background-color: black;
+    color: white;
+    cursor: pointer;
+    
+    border: 2px solid;
+    border-radius: 3%;
+    border-color: white;
+    
+}
+
+.wrapper button:hover {
+    background-color: white;
+    border-color: black;
+    color: black;
+}
+
+.wrapper .logo img {
+    position: center;
+    margin-top: 80px;
+    width: 100px;
+    height: 100px;
+}
+
+.wrapper .code-form input
+{
+    width: 9%;
+    height: 70px;
+    margin-left: 5px;
+    margin-right: 5px;
+    text-align: center;
+    font-size: 5vw;
+    border: 1px none;
+    background-color: black;
+    color: white;
+    opacity: 0.9;
+}
+
+.wrapper .code-form input:focus
+{
+    outline: none;
+}
