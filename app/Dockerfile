@@ -69,6 +69,14 @@ RUN npm install --save-dev nodemon
 #RUN node /js/app.js
 
 
+
+#   ___        Build Axios      ___
+
+RUN npm install axios
+
+
+
+
 #   ___        Build NodeJS      ___
 
 RUN npm run build

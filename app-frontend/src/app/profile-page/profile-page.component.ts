@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { ProfileService } from './profile.service';
+import { Profile, ProfileService } from '../services/profile-service/profile.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-profile-page',
@@ -9,8 +10,7 @@ import { ProfileService } from './profile.service';
 })
 
 export class ProfilePageComponent implements OnInit {
-
-  constructor (private profileService : ProfileService) { }
+  constructor (private service : ProfileService) { }
 
   profileForm = new FormGroup({
     username: new FormControl('Default Username'),
@@ -19,19 +19,23 @@ export class ProfilePageComponent implements OnInit {
 
   fileName = '';
 
+  testValue: Observable<Profile> = this.service.getProfile();
+
   ngOnInit()
   {
-    this.getProfile();
+    //this.getProfile();
   }
 
-  getProfile()
+  
+
+  /*getProfile()
   {
-    this.profileService.getProfile()
+    this.service.getProfile()
       .subscribe(
         res => console.log(res),
         err => console.log(err)
       )
-  }
+  }*/
 
   onFileSelected(event: any) {
 
@@ -40,6 +44,5 @@ export class ProfilePageComponent implements OnInit {
   onSubmit() {
     // TODO: Use EventEmitter with form value
     console.warn(this.profileForm.value);
-
   }
 }

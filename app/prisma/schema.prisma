@@ -12,31 +12,10 @@ datasource db {
 
 model User {
 	id				Int			@id @default(autoincrement())
-	createdAt		DateTime	@default(now())
-	updatedAt		DateTime	@updatedAt
 
-	email			String		@unique
-	hash			String
-
-	firstName		String?
-	lastName		String?
-
-	Bookmarks Bookmark[]
+	nickname		String		@unique
+	login_42		String		@unique
+	img_str			String		@default("default_user")
 	
-	@@map("users")
-}
-
-model Bookmark {
-	id				Int			@id @default(autoincrement())
-	createdAt		DateTime	@default(now())
-	updatedAt		DateTime	@updatedAt
-
-	title			String
-	description		String?
-	link			String
-
-	userId			Int
-	user			User		@relation(fields: [userId], references: [id])
-
-	@@map("bookmarks")
+	// TwoFactorAuth	Boolean		@default(false)
 }
