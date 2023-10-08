@@ -1,8 +1,16 @@
 #   ___    R U N   A S   D E V   ___
 #   ________________________________
 
-FROM    node:20-alpine AS dev
+FROM    node:alpine AS dev
 RUN     apk --update add postgresql-client
+
+
+
+#   ___    Update nest/common    ___
+
+WORKDIR /usr/src/app
+
+
 
 #   ___    Installing Bash    ___
 
@@ -12,7 +20,6 @@ RUN apk update && apk add bash
 
 #   ___   Copying NodeJS files ___
 
-WORKDIR /usr/src/app
 COPY package*.json ./
 
 
@@ -68,12 +75,15 @@ RUN npm install --save-dev nodemon
 
 #RUN node /js/app.js
 
-
+RUN npm install -g npm-check-updates
+RUN ncu -u
+RUN npm install
 
 #   ___        Build Axios      ___
 
 RUN npm install axios
 
+# RUN npm i --save @nestjs/websockets @nestjs/platform-socket.io --force
 
 
 
