@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { SharedService } from './services/shared-service/shared.service';
+import { AuthResponse, AuthService } from './services/auth-service/auth.service';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -15,12 +15,18 @@ export class AppComponent
 {  
 	title = 'Transcendence';
 
-	ShowLogin: boolean;
+	ShowLogin:	boolean;
+	code: string;
+	token: any;
+
+	sign: Observable<AuthResponse>;
 	
-	constructor(private service: SharedService, private http: HttpClient, private route: ActivatedRoute) 
+	constructor(private service: AuthService, private http: HttpClient, private route: ActivatedRoute) 
 	{
-		this.ShowLogin = false;
-		//alert(this.getQueryParameter("code"));
+		this.code = this.getQueryParameter("code");
+		this.sign = this.service.getSign(this.code);
+		this.ShowLogin = true;
+		this.token = "";
 	}
 
 	private getQueryParameter(key: string): string {
@@ -30,6 +36,23 @@ export class AppComponent
 	
 	ngOnInit() 
 	{
-		
+		if (this.token.length > 0)
+		{
+			this.ShowLogin = false;
+			return;
+		}
+		if (this.code.length > 0)
+		{
+			this.sign.subscribe(response => {
+				if (response?.access_token)
+				{
+					this.ShowLogin = false;
+					this.token = response?.access_token;
+					this.service.setToken(this.token);
+				}
+				else
+					console.log(response?.error);
+			});
+		}
 	}
 }

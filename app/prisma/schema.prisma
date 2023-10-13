@@ -15,7 +15,7 @@ model User {
 
 	nickname		String		@unique
 	login_42		String		@unique
-	img_str			String		@default("default_user")
+	img_str			String		@default("default_user.png")
 	
 	// TwoFactorAuth	Boolean		@default(false)
 }

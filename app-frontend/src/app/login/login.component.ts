@@ -30,7 +30,7 @@ export class LoginComponent
     //cuando le doy al boton me comprueba que tengo token y que el usuario
     //tiene activada la 2FA y si se cumplen las dos cosas cambia LoginButton
     //a false y AuthCodeForm a true
-    return false;
+    return true;
   }
 
   ngOnInit(changes: SimpleChanges)

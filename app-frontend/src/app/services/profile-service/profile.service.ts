@@ -26,7 +26,7 @@ export class ProfileService {
         login_42: "bremesar",
         img_str: "string"
       };
-      return this.http.post<Profile>('api/auth/profileInfo', params, { 'headers': headers });
+      return this.http.post<Profile>('api/users/profileInfo', params, { 'headers': headers });
       //return this.http.get<Profile>('api');
   }
 }

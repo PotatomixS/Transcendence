@@ -49,6 +49,11 @@ export class AuthService
 
 		const user_gotten = await this.get_user(str);
 
+		if (!user_gotten)
+		{
+			return {error: "Code error."};
+		}
+
 		const user = await this.prisma.user.findUnique
 		({
 			where: 
@@ -98,41 +103,32 @@ export class AuthService
 
 
 		//	Return User
-
+		const token = await this.signToken(user.id);
 		return {
 			nickname: user.nickname,
-			img_str: user.img_str
+			img_str: user.img_str,
+			access_token: token.access_token
 		};
 	}
 
-	// _____    G E T	P R O F I L E	I N F O    ______
-	
-	async getProfileInfo(str)
-	{
-		//	Look for user in db
-		console.log(str);
-		const user = await this.prisma.user.findUnique
-		({
-			where: 
+	async signToken(userId: number) : Promise< {access_token: string} > {
+		const payload = {
+			sub: userId,
+		};
+
+		const secret = this.config.get('JWT_SECRET');
+		
+		const token = await this.jwt.signAsync(
+			payload,
 			{
-				login_42: str.login_42
-			},
-		});
-
-		//	Return User
-		if (!user)
-		{
-			return {
-				id: 'indefinido',
-				nickname: 'indefinida',
-				login_42: 'indefinido',
-				img_str: 'default_user_logo.png'
+				expiresIn: '15m',
+				secret: secret,
 			}
-		}
-
-		return {
-			nickname: user.nickname,
-			img_str: user.img_str
+		);
+		
+		
+		return{
+			access_token: token, 
 		};
 	}
 
@@ -169,7 +165,10 @@ export class AuthService
 				Authorization: `Bearer ${accessToken}`,},
 			});
 
-			return (meResponse.data.login);
+			if (!meResponse.data.login)
+				return null;
+			else
+				return (meResponse.data.login);
 
 
 			} catch (error) {

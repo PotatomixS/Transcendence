@@ -13,9 +13,4 @@ export class AuthController {
         // return this.authService.sign(dto);
         return this.authService.sign(str);
     }
-
-    @Post('profileInfo')
-    getProfileInfo(@Body() str) {
-        return this.authService.getProfileInfo(str);
-    }
 }
