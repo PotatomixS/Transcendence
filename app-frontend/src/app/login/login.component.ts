@@ -1,5 +1,5 @@
 import { Component, Input, SimpleChange, SimpleChanges } from '@angular/core';
-import { SharedService } from '../shared.service';
+import { SharedService } from '../services/shared-service/shared.service';
 import { FormGroup, FormControl } from '@angular/forms';
 
 @Component({

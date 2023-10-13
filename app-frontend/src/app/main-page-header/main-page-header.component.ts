@@ -1,4 +1,8 @@
 import { Component } from '@angular/core';
+import { Profile, ProfileService } from '../services/profile-service/profile.service';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-main-page-header',
@@ -6,5 +10,13 @@ import { Component } from '@angular/core';
   styleUrls: ['./main-page-header.component.css']
 })
 export class MainPageHeaderComponent {
-
+    profile: Observable<Profile> = this.service.getProfile();
+    
+    constructor(private service: ProfileService, private http: HttpClient, private route: ActivatedRoute) 
+    {
+    }
+    ngOnInit()
+    {
+      this.profile.subscribe();
+    }
 }

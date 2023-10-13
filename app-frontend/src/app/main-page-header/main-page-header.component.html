@@ -8,7 +8,7 @@
         </button>
     </div>
     <div class="profile" routerLink="/profile">
-        <p>Username</p>
-        <img src="../../assets/default_user_logo.png">
+        <p>{{(profile | async)?.nickname}}</p>
+        <img src="../../assets/{{(profile | async)?.img_str}}">
     </div>
 </div>
