@@ -7,6 +7,8 @@ import { ConfigModule } from '@nestjs/config';
 //estos estan de forma temporal
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
+import { ChatModule } from './chat/chat.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports:  [
@@ -17,6 +19,8 @@ import { AppController } from './app.controller';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ChatModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

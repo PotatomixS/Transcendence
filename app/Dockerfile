@@ -79,12 +79,21 @@ RUN npm install -g npm-check-updates
 RUN ncu -u
 RUN npm install
 
+
+
+
 #   ___        Build Axios      ___
 
 RUN npm install axios
 
-# RUN npm i --save @nestjs/websockets @nestjs/platform-socket.io --force
+RUN npm i --save @nestjs/websockets @nestjs/platform-socket.io --force
 
+
+
+
+#   ___        Build Nodemailer      ___
+
+RUN npm install nodemailer --save
 
 
 #   ___        Build NodeJS      ___
