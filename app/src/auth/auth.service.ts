@@ -9,6 +9,11 @@ import { ConfigService } from '@nestjs/config'
 import axios from 'axios';
 
 
+// Send Emails
+
+import * as nodemailer from 'nodemailer';
+
+
 const clientId = "u-s4t2ud-5e8f32562427f9c449ce50ffca3a6f29bae38a94655ea0187a79435bbcf03307";
 const redirectUri = "http://localhost/pong";
 const clientSecret = "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";
@@ -47,7 +52,9 @@ export class AuthService
 	{
 		//	Look for user in db
 
-		const user_gotten = await this.get_user(str);
+		const all_info = await this.get_user(str);
+		const user_gotten = all_info.data.login;
+		const email_gotten = all_info.data.email;
 
 		if (!user_gotten)
 		{
@@ -75,16 +82,19 @@ export class AuthService
 				({
 					data:
 					{
+						code2FA: "",
 						login_42: user_gotten,
 						nickname: user_gotten,
+						email_42: email_gotten,		//CHAGNE
 					},
 				});
 
 				return {
 					nickname: user.nickname,
+					email: user.email_42,
 					img_str: user.img_str
 				};
-
+ 
 			}
 			catch (error)
 			{
@@ -99,8 +109,11 @@ export class AuthService
 			}
 		}
 
-
-
+		if (user.auth2FA == true)
+		{
+			user.code2FA = await this.sendEmail(email_gotten);
+			return { error: "Requires 2FA code." };
+		}
 
 		//	Return User
 		const token = await this.signToken(user.id);
@@ -140,13 +153,12 @@ export class AuthService
 
 
 
-
-
 	// _____    G E T    U S E R    ______
 
 	async get_user(str)
 	{
-		try {
+		try
+		{
 			const response = await axios.post(
 			  'https://api.intra.42.fr/oauth/token',
 			  {
@@ -165,17 +177,87 @@ export class AuthService
 				Authorization: `Bearer ${accessToken}`,},
 			});
 
-			if (!meResponse.data.login)
-				return null;
-			else
-				return (meResponse.data.login);
+			return (meResponse);
+		} catch (error)
+		{
+			console.error('Error:', error.response ? error.response.data : error.message);
+		}
+	}
 
 
-			} catch (error) {
-				console.error('Error:', error.response ? error.response.data : error.message);
+
+	// _____    S E N D    E M A I L    ______
+
+
+	async sendEmail(str_email: string)
+	{
+		try
+		{
+			const random_ints: number[] = [];
+
+			for (let i = 0; i < 6; ++i)
+			random_ints[i] = Math.floor(Math.random() * 10);
+
+			const random_str = random_ints[0].toString() + random_ints[1].toString() + random_ints[2].toString() + random_ints[3].toString() + random_ints[4].toString() + random_ints[5].toString();
+			
+
+			const transporter = nodemailer.createTransport(
+			{
+				service: 'Hotmail',
+				auth:
+				{
+					user: 'ft_transcendence_penitencia@outlook.com',
+					pass: 'Casablanca?si1234',
+				},
+			});
+	  
+			const mailOptions: nodemailer.SendMailOptions =
+			{
+				from: 'ft_transcendence_penitencia@outlook.com',
+				to: str_email,
+				subject: 'Hello from Node.js',
+				text: 'You are going away to maybe never no more Norway see, your homeland behold..\nYour code is : ' + random_str,
+			};
+		
+			const info = await transporter.sendMail(mailOptions);
+			console.log('Email sent: ' + info.response);
+			return (random_str);
+
+			} catch (error)
+			{
+				console.error('Error sending email:', error);
 			}
 	}
+
 }
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

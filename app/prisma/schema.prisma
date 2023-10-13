@@ -12,9 +12,15 @@ datasource db {
 
 model User {
 	id				Int			@id @default(autoincrement())
+	
+	code2FA			String
+
+	auth2FA			Boolean		@default(false) 
 
 	nickname		String		@unique
 	login_42		String		@unique
+
+	email_42		String
 	img_str			String		@default("default_user.png")
 	
 	// TwoFactorAuth	Boolean		@default(false)
