@@ -27,6 +27,8 @@ export class AppComponent
 		this.sign = this.service.getSign(this.code);
 		this.ShowLogin = true;
 		this.token = "";
+		this.TwoFactorAuth = true;
+		//alert(this.getQueryParameter("code"));
 	}
 
 	private getQueryParameter(key: string): string {
