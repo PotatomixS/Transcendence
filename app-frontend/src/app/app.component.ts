@@ -21,7 +21,7 @@ export class AppComponent
 	
 	constructor(private http: HttpClient, private route: ActivatedRoute) 
 	{
-		this.ShowLogin = true;
+		this.ShowLogin = false;
 		this.TwoFactorAuth = true;
 		//alert(this.getQueryParameter("code"));
 	}

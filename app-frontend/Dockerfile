@@ -6,6 +6,7 @@ COPY package*.json ./
 
 RUN npm install
 RUN npm install -g @angular/cli
+RUN npm install socket.io-client
 
 COPY . .
 
