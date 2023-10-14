@@ -1,31 +1,33 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody } from '@nestjs/websockets';
+import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 
 @WebSocketGateway({		cors:	{origin: '*'}	})
-export class MessagesGateway
-{
+export class MessagesGateway {
+	@WebSocketServer()
+	server: Server;
+
 	constructor(private readonly messagesService: MessagesService) {}
 
 	@SubscribeMessage('createMessage')
-	create(@MessageBody() createMessageDto: CreateMessageDto)
+	async create(@MessageBody() createMessageDto: CreateMessageDto)
 	{
-		
-		return this.messagesService.create(createMessageDto);
+		const message = await this.messagesService.create(createMessageDto);
+
+		this.server.emit('message', message);
+
+		return (message);
 	}
 
 	@SubscribeMessage('join')
-	joinRoom()
+	joinRoom( @MessageBody('name') name: string, @ConnectedSocket() client: Socket,)
 	{
-		//TODO
+		return(this.messagesService.identify(name, client.id));
 	}
 
-
-
-
-
-  /*
+	/*
 	@SubscribeMessage('findAllMessages')
 	findAll()
 	{
