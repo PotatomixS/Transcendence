@@ -16,15 +16,14 @@ export class AppComponent
 	title = 'Transcendence';
 
 	ShowLogin:	boolean;
-	code: string;
 	token: any;
+	TwoFactorAuth: boolean;
 
 	sign: Observable<AuthResponse>;
 	
 	constructor(private service: AuthService, private http: HttpClient, private route: ActivatedRoute) 
 	{
-		this.code = this.getQueryParameter("code");
-		this.sign = this.service.getSign(this.code);
+		this.sign = this.service.getSign(this.getQueryParameter("code"));
 		this.ShowLogin = true;
 		this.token = "";
 		this.TwoFactorAuth = true;
@@ -43,18 +42,21 @@ export class AppComponent
 			this.ShowLogin = false;
 			return;
 		}
-		if (this.code.length > 0)
+		if (this.getQueryParameter("code") != null && this.getQueryParameter("code").length > 0)
 		{
-			this.sign.subscribe(response => {
-				if (response?.access_token)
-				{
-					this.ShowLogin = false;
-					this.token = response?.access_token;
-					this.service.setToken(this.token);
-				}
-				else
-					console.log(response?.error);
-			});
+			this.sign.subscribe(
+				response => {
+					if (response?.access_token)
+					{
+						this.ShowLogin = false;
+						this.token = response?.access_token;
+						this.service.setToken(this.token);
+					}
+					else
+						console.log(response?.error);
+				},
+				err => console.log('HTTP Error', err)
+			);
 		}
 	}
 }

@@ -53,13 +53,13 @@ export class AuthService
 		//	Look for user in db
 
 		const all_info = await this.get_user(str);
-		const user_gotten = all_info.data.login;
-		const email_gotten = all_info.data.email;
-
-		if (!user_gotten)
+		if (!all_info)
 		{
 			return {error: "Code error."};
 		}
+
+		const user_gotten = all_info.data.login;
+		const email_gotten = all_info.data.email;
 
 		const user = await this.prisma.user.findUnique
 		({
