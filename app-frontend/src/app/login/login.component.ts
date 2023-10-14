@@ -1,6 +1,5 @@
 import { Component, ElementRef, Input, SimpleChange, SimpleChanges } from '@angular/core';
 import { FormGroup, FormControl } from '@angular/forms';
-import { count } from 'rxjs';
 
 @Component({
   selector: 'app-login',
