@@ -1,5 +1,5 @@
-export class Message
-{
-    name: string;
-    text: string;
-}
+// export class Message
+// {
+//     name: string;
+//     text: string;
+// }

@@ -4,11 +4,18 @@ import { UserModule } from './user/user.module';
 import { BookmarkModule } from './bookmark/bookmark.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
+
 //estos estan de forma temporal
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
-import { ChatModule } from './chat/chat.module';
-import { MessagesModule } from './messages/messages.module';
+
+
+// import { ChatModule } from './chat/chat.module';
+// import { MessagesModule } from './messages/messages.module';
+
+import { GatewayModule } from './gateway/gateway.module';
+
+
 
 @Module({
   imports:  [
@@ -19,8 +26,9 @@ import { MessagesModule } from './messages/messages.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    ChatModule,
-    MessagesModule,
+    // ChatModule,
+    // MessagesModule,
+    GatewayModule,
   ],
   controllers: [AppController],
   providers: [AppService],
