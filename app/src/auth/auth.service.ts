@@ -23,12 +23,6 @@ const grantType = "authorization_code";
 
 
 
-
-
-
-
-
-
 // _____    S I G N     U P     ______
 
 
@@ -42,8 +36,6 @@ export class AuthService
 		private jwt: JwtService,
 		private config: ConfigService
 	) {}
-
-
 
 
 	// _____    S I G N     U P     ______

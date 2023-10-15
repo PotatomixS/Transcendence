@@ -22,6 +22,6 @@ model User {
 
 	email_42		String
 	img_str			String		@default("default_user.png")
-	
-	// TwoFactorAuth	Boolean		@default(false)
+
+	// socket_id		Int
 }
