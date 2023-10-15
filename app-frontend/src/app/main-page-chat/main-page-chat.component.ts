@@ -21,8 +21,15 @@ export class MainPageChatComponent
 
   ngOnInit()
   {
+    var chat: HTMLElement | null = document.getElementById("chat");
+
+    chat?.addEventListener("onresize", (event) => 
+    {
+      console.log(chat?.scrollHeight);
+      chat?.scrollTo(0, chat?.scrollHeight);
+    })
   }
-  
+
   onKeyDownChatFinder(key: KeyboardEvent)
   {
     if (key.key == "Enter") //unirse al canal
@@ -31,12 +38,17 @@ export class MainPageChatComponent
   
   onKeyDownMessageBox(key: KeyboardEvent)
   {
+    var chat: HTMLElement | null = document.getElementById("chat");
     if (key.key == "Enter" && this.MessageBox.value) //enviar mensaje
     {
       this.messages.push("user: " + this.MessageBox.value);
       this.MessageBox.reset();
-      var nbr: number = Number(document.getElementById("chat")?.scrollHeight);
-      document.getElementById("chat")?.scrollTo(0, nbr);
+      requestAnimationFrame(() => {
+        const chat = document.getElementById('chat');
+        if (chat)
+        {
+          chat.scrollTop = chat.scrollHeight;
+        }});
     }
   }
 }
