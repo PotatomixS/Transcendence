@@ -11,7 +11,6 @@ import { PongPageComponent } from './pong-page/pong-page.component';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { InterceptorService,AuthService } from './services/auth-service/auth.service';
-import { SharedService } from './services/shared-service/shared.service';
 import { ProfileService } from './services/profile-service/profile.service';
 
 @NgModule({
@@ -24,7 +23,6 @@ import { ProfileService } from './services/profile-service/profile.service';
       multi: true
     },
     AuthService,
-    SharedService,
     ProfileService
   ],
   bootstrap: [AppComponent]

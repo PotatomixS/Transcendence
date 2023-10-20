@@ -13,4 +13,9 @@ export class UserController {
     getProfileInfo(@Body() str) {
         return this.userService.getProfileInfo(str);
     }
+
+    @Post('setProfileInfo')
+    setProfileInfo(@Body() str) {
+        return this.userService.setProfileInfo(str);
+    }
 }

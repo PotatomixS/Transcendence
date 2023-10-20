@@ -1,6 +1,7 @@
 import { Component, ElementRef, Input, SimpleChange, SimpleChanges } from '@angular/core';
 import { FormGroup, FormControl } from '@angular/forms';
 import { SharedService } from '../services/shared-service/shared.service';
+import { AuthService } from '../services/auth-service/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -19,7 +20,7 @@ export class LoginComponent
     Code6: new FormControl('')
   });
   
-  constructor(public ss: SharedService)
+  constructor(public authService: AuthService)
   {
 
   }
@@ -29,6 +30,9 @@ export class LoginComponent
     //cuando le doy al boton me comprueba que tengo token y que el usuario
     //tiene activada la 2FA y si se cumplen las dos cosas cambia LoginButton
     //a false y AuthCodeForm a true
+
+    //TODO: llamar a sign otra vez con el código y cierta info
+    //this.authService.getSign();
     return true;
   }
 

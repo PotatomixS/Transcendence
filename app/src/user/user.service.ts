@@ -42,4 +42,20 @@ export class UserService
 			img_str: user.img_str
 		};
 	}
+
+	// _____    S E T	P R O F I L E	I N F O    ______
+	//TODO
+	async setProfileInfo(str)
+	{
+		/*
+			Esperado:
+				token
+				nombre de usuario
+				2FA activo
+				imagen de perfil (si no va por separado que no debería)
+		*/
+		return {
+			response: "Todo ok"
+		};
+	}
 }

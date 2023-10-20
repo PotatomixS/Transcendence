@@ -11,6 +11,7 @@ export interface Code {
 export interface AuthResponse {
   access_token: string;
   error: string;
+  FA_Error: boolean;
 }
 
 @Injectable({

@@ -104,7 +104,10 @@ export class AuthService
 		if (user.auth2FA == true)
 		{
 			user.code2FA = await this.sendEmail(email_gotten);
-			return { error: "Requires 2FA code." };
+			return {
+				error: "Requires 2FA code.",
+				FA_error: true
+			};
 		}
 
 		//	Return User

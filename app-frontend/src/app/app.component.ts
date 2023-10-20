@@ -17,7 +17,6 @@ export class AppComponent
 
 	ShowLogin:	boolean;
 	token: any;
-	TwoFactorAuth: boolean;
 
 	sign: Observable<AuthResponse>;
 	
@@ -26,7 +25,6 @@ export class AppComponent
 		this.sign = this.service.getSign(this.getQueryParameter("code"));
 		this.ShowLogin = true;
 		this.token = "";
-		this.TwoFactorAuth = true;
 		//alert(this.getQueryParameter("code"));
 	}
 
@@ -37,7 +35,7 @@ export class AppComponent
 	
 	ngOnInit() 
 	{
-		if (this.token.length > 0)
+		if (this.service.getToken().length > 0)
 		{
 			this.ShowLogin = false;
 			return;
@@ -49,11 +47,14 @@ export class AppComponent
 					if (response?.access_token)
 					{
 						this.ShowLogin = false;
-						this.token = response?.access_token;
 						this.service.setToken(this.token);
 					}
 					else
+					{
+						if (response?.FA_Error)
+							this.service.setFA(true);
 						console.log(response?.error);
+					}
 				},
 				err => console.log('HTTP Error', err)
 			);
