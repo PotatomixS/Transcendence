@@ -51,8 +51,11 @@ export class AppComponent
 					}
 					else
 					{
-						if (response?.FA_Error)
-							this.service.setFA(true);
+						if (response?.FA_error)
+						{
+							console.log("Entra");
+							this.service.faActive.next(true);
+						}
 						console.log(response?.error);
 					}
 				},

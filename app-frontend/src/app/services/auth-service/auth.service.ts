@@ -1,7 +1,7 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { catchError } from 'rxjs/operators'
 
 export interface Code {
@@ -11,7 +11,7 @@ export interface Code {
 export interface AuthResponse {
   access_token: string;
   error: string;
-  FA_Error: boolean;
+  FA_error: boolean;
 }
 
 @Injectable({
@@ -19,9 +19,11 @@ export interface AuthResponse {
 })
 export class AuthService {
   token: string;
+  faActive: BehaviorSubject<boolean>;
   constructor(private http: HttpClient)
   {
     this.token = "";
+    this.faActive = new BehaviorSubject<boolean>(false);
   }
 
   getSign(code: string): Observable<AuthResponse> {

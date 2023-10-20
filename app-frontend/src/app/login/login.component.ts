@@ -1,7 +1,7 @@
 import { Component, ElementRef, Input, SimpleChange, SimpleChanges } from '@angular/core';
 import { FormGroup, FormControl } from '@angular/forms';
-import { SharedService } from '../services/shared-service/shared.service';
 import { AuthService } from '../services/auth-service/auth.service';
+import { Observable, BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -11,6 +11,9 @@ import { AuthService } from '../services/auth-service/auth.service';
 
 export class LoginComponent
 {
+  ShowFA: boolean;
+  faActive: Observable<boolean>;
+
   CodeForm = new FormGroup({
     Code1: new FormControl(''),
     Code2: new FormControl(''),
@@ -22,22 +25,17 @@ export class LoginComponent
   
   constructor(public authService: AuthService)
   {
-
-  }
-
-  ft_2FA(): boolean
-  {
-    //cuando le doy al boton me comprueba que tengo token y que el usuario
-    //tiene activada la 2FA y si se cumplen las dos cosas cambia LoginButton
-    //a false y AuthCodeForm a true
-
-    //TODO: llamar a sign otra vez con el código y cierta info
-    //this.authService.getSign();
-    return true;
+    this.ShowFA = false;
+    this.faActive = this.authService.faActive;
   }
 
   ngOnInit()
   {
+    this.faActive.subscribe(values => {
+      console.log(values);
+      this.ShowFA = values;
+    });
+    
     this.CodeForm.valueChanges.subscribe(values =>
       {
         this.onSubmit(values);
