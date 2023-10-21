@@ -78,6 +78,7 @@ export class AuthService
 						login_42: user_gotten,
 						nickname: user_gotten,
 						email_42: email_gotten,		//CHAGNE
+						socketId: "",
 					},
 				});
 

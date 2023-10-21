@@ -3,10 +3,11 @@ CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
     "code2FA" TEXT NOT NULL,
     "auth2FA" BOOLEAN NOT NULL DEFAULT false,
+    "socketId" TEXT NOT NULL,
     "nickname" TEXT NOT NULL,
     "login_42" TEXT NOT NULL,
     "email_42" TEXT NOT NULL,
-    "img_str" TEXT NOT NULL DEFAULT 'default_user',
+    "img_str" TEXT NOT NULL DEFAULT 'default_user.png',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
