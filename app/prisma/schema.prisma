@@ -14,8 +14,9 @@ model User {
 	id				Int			@id @default(autoincrement())
 	
 	code2FA			String
-
 	auth2FA			Boolean		@default(false) 
+
+	socketId		String		 
 
 	nickname		String		@unique
 	login_42		String		@unique
