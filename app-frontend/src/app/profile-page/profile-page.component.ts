@@ -10,14 +10,20 @@ import { Observable } from 'rxjs';
 })
 
 export class ProfilePageComponent implements OnInit {
-  constructor (private service : ProfileService) { }
+
+  image: any;
+  choosen: boolean;
+
+  constructor (private service : ProfileService)
+  {
+    this.image = null;
+    this.choosen = false;
+  }
 
   profileForm = new FormGroup({
     username: new FormControl('Default Username'),
     factor_auth: new FormControl(false),
   });
-
-  fileName = '';
 
   testValue: Observable<Profile> = this.service.getProfile();
 
@@ -38,11 +44,24 @@ export class ProfilePageComponent implements OnInit {
   }*/
 
   onFileSelected(event: any) {
-
+    if (event.target.value)
+    {
+      this.image = <File>event.target.files[0];
+      this.choosen = true;
+    }
   }
 
   onSubmit() {
     // TODO: Use EventEmitter with form value
     console.warn(this.profileForm.value);
+
+    let fd = new FormData();
+    if (this.image)
+    {
+      fd.append('ProfileImage', this.image, this.image.name);
+      this.service.updateProfileImage(fd).subscribe(res => {
+        console.log("Succis");
+      })
+    }
   }
 }

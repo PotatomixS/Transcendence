@@ -29,4 +29,9 @@ export class ProfileService {
       return this.http.post<Profile>('api/users/profileInfo', params, { 'headers': headers });
       //return this.http.get<Profile>('api');
   }
+
+  updateProfileImage(image: FormData): Observable<Profile> {
+    return this.http.post<Profile>('api/users/upload', {file: image});
+    //return this.http.get<Profile>('api');
+}
 }

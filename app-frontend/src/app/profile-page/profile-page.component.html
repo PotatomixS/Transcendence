@@ -1,10 +1,8 @@
-
 <div class="mainComponent">
     <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="formContainer">
         <div class="profile-image box">
-            <input type="file" class="file-input" (change)="onFileSelected($event)" #fileUpload>
+            <input type="file" class="file-input" (input)="onFileSelected($event)" #fileUpload>
             <div class="file-upload">
-                <p>{{fileName || "No se ha subido imagen aun."}}</p>
                 <button mat-mini-fab color="primary" class="upload-btn" (click)="fileUpload.click()">
                     Subir imagen
                 </button>
