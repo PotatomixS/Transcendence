@@ -16,7 +16,6 @@ export class AppComponent
 	title = 'Transcendence';
 
 	ShowLogin:	boolean;
-	token: any;
 
 	sign: Observable<AuthResponse>;
 	
@@ -24,7 +23,6 @@ export class AppComponent
 	{
 		this.sign = this.service.getSign(this.getQueryParameter());
 		this.ShowLogin = true;
-		this.token = "";
 	}
 
 	private getQueryParameter(): string {
@@ -43,19 +41,16 @@ export class AppComponent
 		{
 			this.sign.subscribe(
 				response => {
+					console.log(response);
 					if (response?.access_token)
 					{
+						this.service.setToken(response.access_token);
 						this.ShowLogin = false;
-						this.service.setToken(this.token);
-						console.log(this.token);
 					}
 					else
 					{
 						if (response?.FA_error)
-						{
-							console.log("Entra");
 							this.service.faActive.next(true);
-						}
 						console.log(response?.error);
 					}
 				},

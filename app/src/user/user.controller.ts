@@ -1,10 +1,10 @@
-import { Controller, Post, UseGuards, Body, UseInterceptors, UploadedFile } from '@nestjs/common';
-import { User } from '@prisma/client';
-//import { GetUser } from 'src/auth/decorator';
+import { Controller, Get, Post, Res, UseGuards, Body, UseInterceptors, UploadedFile, StreamableFile } from '@nestjs/common';
 import { JwtGuard } from 'src/auth/guard';
 import { UserService } from './user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Express } from 'express';
+import { Express, Response } from 'express';
+import { createReadStream } from 'fs';
+import { join } from 'path';
 
 @UseGuards(JwtGuard)
 @Controller('users')
@@ -16,9 +16,16 @@ export class UserController {
         return this.userService.getProfileInfo(str);
     }
 
+    @Get('profileInfoImage')
+    getProfileImage(@Res({ passthrough: true }) res: Response): StreamableFile {
+        const file = createReadStream(join(process.cwd(), 'upload/images/default_user.png'));
+        return new StreamableFile(file);
+    }
+
     @Post('setProfileInfo')
     setProfileInfo(@Body() str) {
         return this.userService.setProfileInfo(str);
+    }
 
     @Post('upload')
     @UseInterceptors(FileInterceptor('file'))

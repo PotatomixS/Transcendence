@@ -9,6 +9,6 @@
     </div>
     <div class="profile" routerLink="/profile">
         <p>{{(profile | async)?.nickname}}</p>
-        <!--<img src="../../assets/{{(profile | async)?.img_str}}">-->
+        <img [src]="profileImage">
     </div>
 </div>

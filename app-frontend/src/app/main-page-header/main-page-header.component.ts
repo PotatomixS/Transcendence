@@ -11,12 +11,25 @@ import { Observable } from 'rxjs';
 })
 export class MainPageHeaderComponent {
     profile: Observable<Profile> = this.service.getProfile();
-    
+    profileImage: any;
+
     constructor(private service: ProfileService, private http: HttpClient, private route: ActivatedRoute) 
     {
     }
     ngOnInit()
     {
       this.profile.subscribe();
+
+      this.service.getProfileImage().subscribe(
+        imgBlob => {
+          this.service.createImageFromBlob(imgBlob).then(
+            result => {
+              this.profileImage = result;
+            },
+            err => {
+              console.log(err);
+            }
+          )
+        });
     }
 }
