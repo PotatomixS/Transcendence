@@ -22,13 +22,12 @@ export class AppComponent
 	
 	constructor(private service: AuthService, private http: HttpClient, private route: ActivatedRoute) 
 	{
-		this.sign = this.service.getSign(this.getQueryParameter("code"));
+		this.sign = this.service.getSign(this.getQueryParameter());
 		this.ShowLogin = true;
 		this.token = "";
-		//alert(this.getQueryParameter("code"));
 	}
 
-	private getQueryParameter(key: string): string {
+	private getQueryParameter(): string {
 		const parameters = new URLSearchParams(window.location.search);
 		return String(parameters.get("code"));
 	}
@@ -40,7 +39,7 @@ export class AppComponent
 			this.ShowLogin = false;
 			return;
 		}
-		if (this.getQueryParameter("code") != null && this.getQueryParameter("code").length > 0)
+		if (this.getQueryParameter() != null && this.getQueryParameter().length > 0)
 		{
 			this.sign.subscribe(
 				response => {
@@ -48,6 +47,7 @@ export class AppComponent
 					{
 						this.ShowLogin = false;
 						this.service.setToken(this.token);
+						console.log(this.token);
 					}
 					else
 					{
