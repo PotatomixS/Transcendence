@@ -13,6 +13,14 @@ export class ProfilePageComponent implements OnInit {
 
   image: any;
   choosen: boolean;
+  
+  profileForm = new FormGroup({
+    nickname: new FormControl(),
+    auth2FA: new FormControl(),
+    login_42: new FormControl()
+  });
+
+  testValue: Observable<Profile> = this.service.getProfile();
 
   constructor (private service : ProfileService)
   {
@@ -20,16 +28,16 @@ export class ProfilePageComponent implements OnInit {
     this.choosen = false;
   }
 
-  profileForm = new FormGroup({
-    username: new FormControl('Default Username'),
-    factor_auth: new FormControl(false),
-  });
-
-  testValue: Observable<Profile> = this.service.getProfile();
-
   ngOnInit()
   {
-    //this.getProfile();
+    this.testValue.subscribe(res => {
+      console.log(res);
+      this.profileForm.setValue({
+        nickname: res.nickname,
+        auth2FA: res.auth2FA,
+        login_42: this.service.login_42
+      });
+    });
   }
 
   
@@ -56,12 +64,14 @@ export class ProfilePageComponent implements OnInit {
     console.warn(this.profileForm.value);
 
     let fd = new FormData();
+    this.service.updateProfile(this.profileForm.value).subscribe(res => {
+      console.log(res);
+    });
     if (this.image)
     {
       fd.append('ProfileImage', this.image, this.image.name);
-      this.service.updateProfileImage(fd).subscribe(res => {
-        console.log("Succis");
-      })
+      
+      this.service.updateProfileImage(fd).subscribe();
     }
   }
 }

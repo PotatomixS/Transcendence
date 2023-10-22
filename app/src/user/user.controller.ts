@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Res, UseGuards, Body, UseInterceptors, UploadedFile, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Post, Res, UseGuards, Body, UseInterceptors, UploadedFile, StreamableFile, Param } from '@nestjs/common';
 import { JwtGuard } from 'src/auth/guard';
 import { UserService } from './user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -16,9 +16,10 @@ export class UserController {
         return this.userService.getProfileInfo(str);
     }
 
-    @Get('profileInfoImage')
-    getProfileImage(@Res({ passthrough: true }) res: Response): StreamableFile {
-        const file = createReadStream(join(process.cwd(), 'upload/images/default_user.png'));
+    @Post('profileInfoImage')
+    getProfileImage(@Body() str, @Res({ passthrough: true }) res: Response): StreamableFile {
+        console.log("IMAGE: " + str.image);
+        const file = createReadStream(join(process.cwd(), 'upload/images/' + str.image));
         return new StreamableFile(file);
     }
 

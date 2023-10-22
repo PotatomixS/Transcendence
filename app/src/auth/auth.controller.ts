@@ -13,4 +13,9 @@ export class AuthController {
         // return this.authService.sign(dto);
         return this.authService.sign(str);
     }
+
+    @Post('checkCode')
+    checkCode(@Body() str) {
+        return this.authService.check_code(str);
+    }
 }

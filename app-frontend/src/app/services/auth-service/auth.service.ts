@@ -2,13 +2,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { catchError } from 'rxjs/operators'
-
-export interface Code {
-  code: string;
-}
 
 export interface AuthResponse {
+  login_42: string;
   access_token: string;
   error: string;
   FA_error: boolean;
@@ -20,14 +16,16 @@ export interface AuthResponse {
 export class AuthService {
   token: string;
   faActive: BehaviorSubject<boolean>;
+  logged: BehaviorSubject<boolean>;
   constructor(private http: HttpClient)
   {
     this.token = "";
     this.faActive = new BehaviorSubject<boolean>(false);
+    this.logged = new BehaviorSubject<boolean>(false);
   }
 
   getSign(code: string): Observable<AuthResponse> {
-    const params: Code = {
+    const params = {
       code
     };
     return this.http.post<AuthResponse>('api/auth/sign', params, { 'headers': new HttpHeaders() });
@@ -39,6 +37,14 @@ export class AuthService {
 
   getToken(): string {
     return this.token;
+  }
+
+  checkCode(login_42: string, code2FA: string): Observable<any> {
+    const params = {
+      login_42,
+      code2FA
+    };
+    return this.http.post<any>('api/auth/checkCode', params, { 'headers': new HttpHeaders() });
   }
 }
 
@@ -74,29 +80,3 @@ export class InterceptorService implements HttpInterceptor {
     }))*/
   }
 }
-
-/*import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
-export interface Code {
-  code: string
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-export class AuthService {
-
-  constructor(private http: HttpClient) { }
-
-  getSign(code: string): Observable<Code> {
-      const headers = new HttpHeaders(
-      {
-      });
-      const params: Code = {
-        code
-      };
-      return this.http.post<Code>('api/auth/sign', params, { 'headers': headers });
-  }
-}*/

@@ -18,18 +18,19 @@ export class MainPageHeaderComponent {
     }
     ngOnInit()
     {
-      this.profile.subscribe();
-
-      this.service.getProfileImage().subscribe(
-        imgBlob => {
-          this.service.createImageFromBlob(imgBlob).then(
-            result => {
-              this.profileImage = result;
-            },
-            err => {
-              console.log(err);
-            }
-          )
+      this.profile.subscribe(res => 
+        {
+          this.service.getProfileImage(res.img_str).subscribe(
+            imgBlob => {
+              this.service.createImageFromBlob(imgBlob).then(
+                result => {
+                  this.profileImage = result;
+                },
+                err => {
+                  console.log(err);
+                }
+              )
+          });
         });
     }
 }

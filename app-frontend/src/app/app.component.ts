@@ -3,6 +3,7 @@ import { AuthResponse, AuthService } from './services/auth-service/auth.service'
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
+import { ProfileService } from './services/profile-service/profile.service';
 
 
 @Component({
@@ -16,13 +17,15 @@ export class AppComponent
 	title = 'Transcendence';
 
 	ShowLogin:	boolean;
+	loggedIn: Observable<boolean>;
 
 	sign: Observable<AuthResponse>;
 	
-	constructor(private service: AuthService, private http: HttpClient, private route: ActivatedRoute) 
+	constructor(private service: AuthService, private profile: ProfileService, private http: HttpClient, private route: ActivatedRoute) 
 	{
 		this.sign = this.service.getSign(this.getQueryParameter());
 		this.ShowLogin = true;
+		this.loggedIn = this.service.logged;
 	}
 
 	private getQueryParameter(): string {
@@ -32,20 +35,25 @@ export class AppComponent
 	
 	ngOnInit() 
 	{
+		this.loggedIn.subscribe(res => {
+			this.ShowLogin = !res;
+		});
+
 		if (this.service.getToken().length > 0)
 		{
-			this.ShowLogin = false;
+			this.service.logged.next(true);
 			return;
 		}
 		if (this.getQueryParameter() != null && this.getQueryParameter().length > 0)
 		{
 			this.sign.subscribe(
 				response => {
+					this.profile.login_42 = response.login_42;
 					console.log(response);
 					if (response?.access_token)
 					{
 						this.service.setToken(response.access_token);
-						this.ShowLogin = false;
+						this.service.logged.next(true);
 					}
 					else
 					{

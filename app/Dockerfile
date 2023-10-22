@@ -53,12 +53,6 @@ RUN yarn add @nestjs/config
 
 
 
-#   ___   Installing Password enrpiter "Argon2"   ___
-
-RUN yarn add argon2
-
-
-
 #   ___   Installing Passport for auth   ___
 
 RUN yarn add @nestjs/passport passport

@@ -33,13 +33,15 @@ export class UserService
 				id: 'indefinido',
 				nickname: 'indefinida',
 				login_42: 'indefinido',
-				img_str: 'default_user_logo.png'
+				img_str: 'default_user.png',
+				auth2FA: false
 			}
 		}
 
 		return {
 			nickname: user.nickname,
-			img_str: user.img_str
+			img_str: user.img_str,
+			auth2FA: user.auth2FA
 		};
 	}
 
@@ -47,13 +49,19 @@ export class UserService
 	//TODO
 	async setProfileInfo(str)
 	{
-		/*
-			Esperado:
-				token
-				nombre de usuario
-				2FA activo
-				imagen de perfil (si no va por separado que no debería)
-		*/
+		const updateResponse = await this.prisma.user.update
+		({
+			where: {
+				login_42: str.login_42
+			},
+			data:
+			{
+				nickname: str.nickname,
+				auth2FA: str.auth2FA
+			},
+		});
+
+
 		return {
 			response: "Todo ok"
 		};

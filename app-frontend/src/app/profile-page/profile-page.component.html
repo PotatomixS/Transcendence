@@ -9,11 +9,11 @@
             </div>
         </div>
         <div class="profile-form box">
-            <label for="username">Nombre de usuario: </label>
-            <input id="username" type="text" formControlName="username">
+            <label for="nickname">Nombre de usuario: </label>
+            <input id="nickname" type="text" formControlName="nickname">
             <br>
-            <label for="factor_auth">Autentificación en dos pasos: </label>
-            <input id="factor_auth" type="checkbox" formControlName="factor_auth">
+            <label for="auth2FA">Autentificación en dos pasos: </label>
+            <input id="auth2FA" type="checkbox" formControlName="auth2FA">
             <br><br>
             <p>Completa el formulario para habilitar el botón.</p>
             <button type="submit" [disabled]="!profileForm.valid">Guardar</button>

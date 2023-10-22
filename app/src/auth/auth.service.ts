@@ -3,7 +3,6 @@ import { PrismaClient, Prisma } from '@prisma/client'
 import { ForbiddenException } from '@nestjs/common';
 import { Injectable, Post } from "@nestjs/common";
 import { AuthDto } from './dto';
-import * as argon from 'argon2';
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from '@nestjs/config'
 import axios from 'axios';
@@ -83,6 +82,7 @@ export class AuthService
 				});
 
 				return {
+					login_42: user.login_42,
 					nickname: user.nickname,
 					email: user.email_42,
 					img_str: user.img_str
@@ -104,8 +104,22 @@ export class AuthService
 
 		if (user.auth2FA == true)
 		{
+			//sign fallado por 2FA activo
 			user.code2FA = await this.sendEmail(email_gotten);
+
+			const updateResponse = await this.prisma.user.update
+			({
+				where: {
+					login_42: user.login_42
+				},
+				data:
+				{
+					code2FA: user.code2FA
+				},
+			});
+
 			return {
+				login_42: user.login_42,
 				error: "Requires 2FA code.",
 				FA_error: true
 			};
@@ -114,6 +128,7 @@ export class AuthService
 		//	Return User
 		const token = await this.signToken(user.id);
 		return {
+			login_42: user.login_42,
 			nickname: user.nickname,
 			img_str: user.img_str,
 			access_token: token.access_token
@@ -144,9 +159,31 @@ export class AuthService
 
 
 
+	// _____    T R Y	C O D E    ______
 
+	async check_code(str)
+	{
+		const user = await this.prisma.user.findUnique
+		({
+			where: 
+			{
+				login_42: str.login_42,
+			},
+		});
+		//intento de sign desde pantalla 2FA
+		if (str.code2FA != user.code2FA)
+			return { error: "Invalid code "};
 
-
+		//	Return User
+		const token = await this.signToken(user.id);
+		return {
+			response: "ok",
+			login_42: user.login_42,
+			nickname: user.nickname,
+			img_str: user.img_str,
+			access_token: token.access_token
+		};
+	}
 
 
 	// _____    G E T    U S E R    ______

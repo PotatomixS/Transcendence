@@ -2,6 +2,7 @@ import { Component, ElementRef, Input, SimpleChange, SimpleChanges } from '@angu
 import { FormGroup, FormControl } from '@angular/forms';
 import { AuthService } from '../services/auth-service/auth.service';
 import { Observable, BehaviorSubject } from 'rxjs';
+import { ProfileService } from '../services/profile-service/profile.service';
 
 @Component({
   selector: 'app-login',
@@ -23,16 +24,20 @@ export class LoginComponent
     Code6: new FormControl('')
   });
   
-  constructor(public authService: AuthService)
+  constructor(public authService: AuthService, public profileService: ProfileService)
   {
     this.ShowFA = false;
     this.faActive = this.authService.faActive;
   }
 
+  private getQueryParameter(): string {
+		const parameters = new URLSearchParams(window.location.search);
+		return String(parameters.get("code"));
+	}
+
   ngOnInit()
   {
     this.faActive.subscribe(values => {
-      console.log(values);
       this.ShowFA = values;
     });
     
@@ -44,21 +49,22 @@ export class LoginComponent
   
   onSubmit(values: any)
   {
-    const Code: String = values.Code1 + values.Code2 + values.Code3 + values.Code4 + values.Code5 + values.Code6;
+    const Code: string = values.Code1 + values.Code2 + values.Code3 + values.Code4 + values.Code5 + values.Code6;
     if (values.Code1 && values.Code2 &&
       values.Code3 && values.Code4 &&
       values.Code5 && values.Code6)
       {
         document.getElementById("code1")?.blur();
-        if (Code == "123456")
-        {
-          console.log("Success");
-        }
-        else
-        {
-          console.log("Failure");
+        console.log("LOGIN: " + this.profileService.login_42);
+        this.authService.checkCode(this.profileService.login_42, Code).subscribe(res => {
           this.CodeForm.reset();
-        }
+          if (res?.response)
+          {
+            //ok
+            this.authService.setToken(res.access_token);
+            this.authService.logged.next(true);
+          }
+        });
         console.log(Code);
       }
     }
