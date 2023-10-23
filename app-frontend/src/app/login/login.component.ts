@@ -55,8 +55,7 @@ export class LoginComponent
       values.Code5 && values.Code6)
       {
         document.getElementById("code1")?.blur();
-        console.log("LOGIN: " + this.profileService.login_42);
-        this.authService.checkCode(this.profileService.login_42, Code).subscribe(res => {
+        this.authService.checkCode(this.profileService.profile.getValue().login_42, Code).subscribe(res => {
           this.CodeForm.reset();
           if (res?.response)
           {

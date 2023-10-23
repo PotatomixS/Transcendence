@@ -35,20 +35,15 @@ export class ChatService
 
 	constructor(profileService: ProfileService)
 	{
-		profileService.getProfile().subscribe((data) => 
+		profileService.profile.subscribe((data) => 
 		{
 			this.userName = data.nickname;
 		});
-		
-		this.userName = "ahernand";
-		console.log("CO" + this.userName);
 	
 		this.socket.on('connect', () =>
 		{
 			this.socket.on('InitSocketId', (g_socketId: string) =>
 			{
-				console.log(this.userName);
-
 				this.socket.emit('newUserAndSocketId', {userName: this.userName, socketId: g_socketId});
 			});
 		});

@@ -1,22 +1,25 @@
 <div class="mainComponent">
-    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="formContainer">
+    <div class="formContainer">
         <div class="profile-image box">
             <input type="file" class="file-input" (input)="onFileSelected($event)" #fileUpload>
             <div class="file-upload">
-                <button mat-mini-fab color="primary" class="upload-btn" (click)="fileUpload.click()">
+                <button type="none" mat-mini-fab color="primary" class="upload-btn" (click)="fileUpload.click()">
                     Subir imagen
                 </button>
             </div>
         </div>
-        <div class="profile-form box">
-            <label for="nickname">Nombre de usuario: </label>
-            <input id="nickname" type="text" formControlName="nickname">
-            <br>
-            <label for="auth2FA">Autentificación en dos pasos: </label>
-            <input id="auth2FA" type="checkbox" formControlName="auth2FA">
-            <br><br>
-            <p>Completa el formulario para habilitar el botón.</p>
-            <button type="submit" [disabled]="!profileForm.valid">Guardar</button>
-        </div>
-    </form>
+        <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+            
+            <div class="profile-form box">
+                <label for="nickname">Nombre de usuario: </label>
+                <input id="nickname" type="text" formControlName="nickname">
+                <br>
+                <label for="auth2FA">Autentificación en dos pasos: </label>
+                <input id="auth2FA" type="checkbox" formControlName="auth2FA">
+                <br><br>
+                <p>Completa el formulario para habilitar el botón.</p>
+                <button type="submit" [disabled]="!profileForm.valid">Guardar</button>
+            </div>
+        </form>
+    </div>
 </div>

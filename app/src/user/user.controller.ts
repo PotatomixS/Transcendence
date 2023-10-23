@@ -28,7 +28,7 @@ export class UserController {
         return this.userService.setProfileInfo(str);
     }
 
-    @Post('upload')
+    @Post('setProfileInfoImage')
     @UseInterceptors(FileInterceptor('file'))
         uploadFile(@UploadedFile() file: Express.Multer.File) {
         console.log(file);

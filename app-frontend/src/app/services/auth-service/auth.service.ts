@@ -3,13 +3,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 
-export interface AuthResponse {
-  login_42: string;
-  access_token: string;
-  error: string;
-  FA_error: boolean;
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -24,11 +17,11 @@ export class AuthService {
     this.logged = new BehaviorSubject<boolean>(false);
   }
 
-  getSign(code: string): Observable<AuthResponse> {
+  getSign(code: string): Observable<any> {
     const params = {
       code
     };
-    return this.http.post<AuthResponse>('api/auth/sign', params, { 'headers': new HttpHeaders() });
+    return this.http.post<any>('api/auth/sign', params, { 'headers': new HttpHeaders() });
   }
 
   setToken(newToken: string) {

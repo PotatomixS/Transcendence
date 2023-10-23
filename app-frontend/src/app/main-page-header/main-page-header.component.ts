@@ -10,7 +10,7 @@ import { Observable } from 'rxjs';
   styleUrls: ['./main-page-header.component.css']
 })
 export class MainPageHeaderComponent {
-    profile: Observable<Profile> = this.service.getProfile();
+    profile: Observable<Profile> = this.service.profile.asObservable();
     profileImage: any;
 
     constructor(private service: ProfileService, private http: HttpClient, private route: ActivatedRoute) 
@@ -18,7 +18,7 @@ export class MainPageHeaderComponent {
     }
     ngOnInit()
     {
-      this.profile.subscribe(res => 
+      this.service.profile.subscribe(res => 
         {
           this.service.getProfileImage(res.img_str).subscribe(
             imgBlob => {

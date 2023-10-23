@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { AuthResponse, AuthService } from './services/auth-service/auth.service';
+import { AuthService } from './services/auth-service/auth.service';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
-import { ProfileService } from './services/profile-service/profile.service';
+import { ProfileService, Profile } from './services/profile-service/profile.service';
 
 
 @Component({
@@ -18,12 +18,9 @@ export class AppComponent
 
 	ShowLogin:	boolean;
 	loggedIn: Observable<boolean>;
-
-	sign: Observable<AuthResponse>;
 	
-	constructor(private service: AuthService, private profile: ProfileService, private http: HttpClient, private route: ActivatedRoute) 
+	constructor(private service: AuthService, private profileService: ProfileService, private http: HttpClient, private route: ActivatedRoute) 
 	{
-		this.sign = this.service.getSign(this.getQueryParameter());
 		this.ShowLogin = true;
 		this.loggedIn = this.service.logged;
 	}
@@ -46,19 +43,38 @@ export class AppComponent
 		}
 		if (this.getQueryParameter() != null && this.getQueryParameter().length > 0)
 		{
-			this.sign.subscribe(
+			this.service.getSign(this.getQueryParameter()).subscribe(
 				response => {
-					this.profile.login_42 = response.login_42;
-					console.log(response);
+					//profile update
+					const newProfile: Profile = {
+						id: "",
+						nickname: "",
+						login_42: response.login_42,
+						img_str: "",
+						auth2FA: false
+					};
+					this.profileService.profile.next(newProfile);
+
 					if (response?.access_token)
 					{
+						//profile update
+						newProfile.nickname = response.nickname;
+						newProfile.img_str = response.img_str;
+						this.profileService.profile.next(newProfile);
+
 						this.service.setToken(response.access_token);
 						this.service.logged.next(true);
 					}
 					else
 					{
 						if (response?.FA_error)
+						{
+							//profile update
+							newProfile.auth2FA = true;
+							this.profileService.profile.next(newProfile);
+
 							this.service.faActive.next(true);
+						}
 						console.log(response?.error);
 					}
 				},

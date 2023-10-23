@@ -16,11 +16,10 @@ export class ProfilePageComponent implements OnInit {
   
   profileForm = new FormGroup({
     nickname: new FormControl(),
-    auth2FA: new FormControl(),
-    login_42: new FormControl()
+    auth2FA: new FormControl()
   });
 
-  testValue: Observable<Profile> = this.service.getProfile();
+  testValue: Observable<Profile> = this.service.profile;
 
   constructor (private service : ProfileService)
   {
@@ -31,25 +30,12 @@ export class ProfilePageComponent implements OnInit {
   ngOnInit()
   {
     this.testValue.subscribe(res => {
-      console.log(res);
       this.profileForm.setValue({
         nickname: res.nickname,
-        auth2FA: res.auth2FA,
-        login_42: this.service.login_42
+        auth2FA: res.auth2FA
       });
     });
   }
-
-  
-
-  /*getProfile()
-  {
-    this.service.getProfile()
-      .subscribe(
-        res => console.log(res),
-        err => console.log(err)
-      )
-  }*/
 
   onFileSelected(event: any) {
     if (event.target.value)
@@ -61,15 +47,12 @@ export class ProfilePageComponent implements OnInit {
 
   onSubmit() {
     // TODO: Use EventEmitter with form value
-    console.warn(this.profileForm.value);
+    this.service.updateProfile(this.profileForm.value);
 
-    let fd = new FormData();
-    this.service.updateProfile(this.profileForm.value).subscribe(res => {
-      console.log(res);
-    });
-    if (this.image)
+    if (this.choosen == true)
     {
-      fd.append('ProfileImage', this.image, this.image.name);
+      let fd = new FormData();
+      fd.append('file', this.image, this.image.name);
       
       this.service.updateProfileImage(fd).subscribe();
     }

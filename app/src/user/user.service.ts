@@ -38,11 +38,7 @@ export class UserService
 			}
 		}
 
-		return {
-			nickname: user.nickname,
-			img_str: user.img_str,
-			auth2FA: user.auth2FA
-		};
+		return user;
 	}
 
 	// _____    S E T	P R O F I L E	I N F O    ______

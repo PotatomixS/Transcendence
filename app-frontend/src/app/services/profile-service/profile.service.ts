@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 export interface Profile {
@@ -16,19 +16,25 @@ export interface Profile {
 })
 export class ProfileService {
 
-  login_42: string;
+  profile: BehaviorSubject<Profile>;
   constructor(private http: HttpClient, private domSanitizer: DomSanitizer)
   {
-    this.login_42 = "";
+    this.profile = new BehaviorSubject<Profile>({
+      id: "",
+      nickname: "",
+      login_42: "",
+      img_str: "",
+      auth2FA: false
+    });
   }
 
-  getProfile(): Observable<Profile> {
+  getProfile() {
+    console.log(this.profile.getValue());
     const params = {
-      login_42: this.login_42
+      login_42: this.profile.getValue().login_42
     };
 
-    return this.http.post<Profile>('api/users/profileInfo', params);
-    //return this.http.get<Profile>('api');
+    this.http.post<Profile>('api/users/profileInfo', params).subscribe(res => this.profile.next(res));
   }
 
   getProfileImage(image: string): Observable<Blob> {
@@ -57,11 +63,16 @@ export class ProfileService {
     });
   }
 
-  updateProfile(data: any): Observable<any> {
-    return this.http.post<any>('api/users/setProfileInfo', data);
+  updateProfile(data: any) {
+    data = {
+      login_42: this.profile.getValue().login_42,
+      nickname: data.nickname,
+      auth2FA: data.auth2FA
+    }
+    this.http.post<any>('api/users/setProfileInfo', data).subscribe(res => this.getProfile());
   }
 
-  updateProfileImage(image: FormData): Observable<Profile> {
-    return this.http.post<Profile>('api/users/upload', {file: image});
+  updateProfileImage(imageForm: FormData): Observable<Profile> {
+    return this.http.post<Profile>('api/users/setProfileInfoImage', imageForm);
   }
 }
