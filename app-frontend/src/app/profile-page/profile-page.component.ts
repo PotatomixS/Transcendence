@@ -46,15 +46,20 @@ export class ProfilePageComponent implements OnInit {
   }
 
   onSubmit() {
-    // TODO: Use EventEmitter with form value
-    this.service.updateProfile(this.profileForm.value);
-
     if (this.choosen == true)
     {
       let fd = new FormData();
       fd.append('file', this.image, this.image.name);
       
-      this.service.updateProfileImage(fd).subscribe();
+      this.service.updateProfileImage(fd).subscribe(res => {
+        console.log(res);
+        this.service.updateProfile(this.profileForm.value, res.filename);
+      });
     }
+    else
+      this.service.updateProfile(this.profileForm.value);
+
+    // TODO: Use EventEmitter with form value
+    
   }
 }

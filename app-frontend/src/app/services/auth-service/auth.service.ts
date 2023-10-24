@@ -26,6 +26,7 @@ export class AuthService {
 
   setToken(newToken: string) {
     this.token = newToken;
+    console.log(newToken);
   }
 
   getToken(): string {

@@ -15,7 +15,7 @@ import * as nodemailer from 'nodemailer';
 
 const clientId = "u-s4t2ud-5e8f32562427f9c449ce50ffca3a6f29bae38a94655ea0187a79435bbcf03307";
 const redirectUri = "http://localhost/pong";
-const clientSecret = "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";
+const clientSecret = "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";
 const code2 = "0888ae267f7cbcfdba94cf0d5546476bcb97e45fcbf24bc14e25d06237b4de25";
 const grantType = "authorization_code";
 

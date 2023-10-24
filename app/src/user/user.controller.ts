@@ -5,11 +5,15 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Express, Response } from 'express';
 import { createReadStream } from 'fs';
 import { join } from 'path';
+import { diskStorage } from "multer";
+import { extname } from "path";
 
 @UseGuards(JwtGuard)
 @Controller('users')
 export class UserController {
-    constructor(private userService: UserService) { }
+
+    constructor(private userService: UserService) {
+    }
 
     @Post('profileInfo')
     getProfileInfo(@Body() str) {
@@ -29,8 +33,24 @@ export class UserController {
     }
 
     @Post('setProfileInfoImage')
-    @UseInterceptors(FileInterceptor('file'))
-        uploadFile(@UploadedFile() file: Express.Multer.File) {
+    @UseInterceptors(FileInterceptor('file', {
+        dest: "upload/images/",
+        storage
+    }))
+        uploadFile(@UploadedFile() file: Express.Multer.File)
+    {
         console.log(file);
+        return file;
     }
 }
+
+export const storage = diskStorage({
+    destination: "upload/images/",
+    filename: (req, file, callback) => {
+      callback(null, generateFilename(file));
+    }
+  });
+  
+  function generateFilename(file) {
+    return `${Date.now()}.${extname(file.originalname)}`;
+  }

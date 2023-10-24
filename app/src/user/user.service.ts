@@ -45,16 +45,21 @@ export class UserService
 	//TODO
 	async setProfileInfo(str)
 	{
+		let dataToUpdate = {
+			nickname: str.nickname,
+			auth2FA: str.auth2FA
+		};
+		
+		if (str?.img_str)
+			dataToUpdate["img_str"] = str.img_str
+
 		const updateResponse = await this.prisma.user.update
 		({
 			where: {
 				login_42: str.login_42
 			},
-			data:
-			{
-				nickname: str.nickname,
-				auth2FA: str.auth2FA
-			},
+			data: dataToUpdate
+			
 		});
 
 

@@ -23,7 +23,7 @@ export class ProfileService {
       id: "",
       nickname: "",
       login_42: "",
-      img_str: "",
+      img_str: "default_user.png",
       auth2FA: false
     });
   }
@@ -63,16 +63,18 @@ export class ProfileService {
     });
   }
 
-  updateProfile(data: any) {
+  updateProfile(data: any, img_str: string = "") {
     data = {
       login_42: this.profile.getValue().login_42,
       nickname: data.nickname,
       auth2FA: data.auth2FA
     }
+    if (img_str != "")
+      data["img_str"] = img_str;
     this.http.post<any>('api/users/setProfileInfo', data).subscribe(res => this.getProfile());
   }
 
-  updateProfileImage(imageForm: FormData): Observable<Profile> {
-    return this.http.post<Profile>('api/users/setProfileInfoImage', imageForm);
+  updateProfileImage(imageForm: FormData): Observable<any> {
+    return this.http.post<any>('api/users/setProfileInfoImage', imageForm);
   }
 }
