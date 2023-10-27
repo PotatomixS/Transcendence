@@ -28,12 +28,11 @@ export class MyGateway
 		this.server.on('connection', (socket) =>
 		{
 			console.log(socket.id);
-			console.log('Connected');
 
 			this.server.to(socket.id).emit('InitSocketId', socket.id);
 		})
 	}
-
+ 
 
 
 
@@ -42,15 +41,131 @@ export class MyGateway
 	@SubscribeMessage('newMessage')
 	onNewMessage(@MessageBody() body: any)
 	{
-		// this.ft_get_user();
-		
-		console.log(body);
-		this.server.emit('onMessage',
+		const msg: string = String(body.message);
+
+		if (msg.startsWith("/join"))
 		{
-			user: 'USER',
-			message: body,
-		});
+			var startIndex = msg.indexOf(" ") + 1;
+			var room = msg.substring(startIndex);
+
+			console.log(room);
+			this.ft_join_channel(room, body.userName);
+			this.ft_emit(room);
+		}
+
+		/*
+		if (body.startsWith("/dm"))
+		{
+			var startIndex = body.indexOf(" ") + 1;
+			var user_parsed = body.substring(startIndex);
+
+			console.log(user_parsed);
+		}
+		else
+		{
+			this.server.emit('onMessage',
+			{
+				user: body.userName,
+				message: body.message,
+			});
+		}*/
 	}
+	
+	async ft_join_channel(channelName: string, user: string)
+	{
+		// Create Channels
+
+		const channel_exists = await this.prisma.channel.findUnique
+		({
+			where:
+			{
+				Name: channelName,
+			},
+		});
+
+		if (!channel_exists)
+		{
+			const channel8 = await this.prisma.channel.create
+			({
+				data:
+				{
+					Name: channelName,
+					Password: "pass_add",
+				},
+			});
+		}
+
+
+		//exit channel that was on 
+
+		// Join list on server
+
+		const join_channel = await this.prisma.joinedChannels.findUnique
+		({
+			where:
+			{
+				idUser: user,
+			},
+		});
+
+		if (!join_channel)
+		{
+			const joined_channel_table = await this.prisma.joinedChannels.create
+			({
+				data:
+				{
+					idUser: user,
+					idChannel: channelName,
+				},
+			});
+		}
+	}
+
+	async ft_emit(channelName: string)
+	{
+	    const joinedChannels = await this.prisma.joinedChannels.findMany
+		({
+			where:
+			{
+				parameter: channelName,
+			},
+		});
+
+
+
+
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -60,14 +175,11 @@ export class MyGateway
 
 
 	@SubscribeMessage('newUserAndSocketId')
-	onNewUserAndSocketId(body: any)
+	onNewUserAndSocketId(@MessageBody() body: any)
 	{
-		console.log(body.userName);
+		
 		this.ft_get_user(body.userName, body.socketId);
 	}
-
-
-
 
 	async ft_get_user(userName: String, socketId: String)
 	{
@@ -78,7 +190,12 @@ export class MyGateway
 				login_42: String(userName),
 			},
 		});
-		// user.socketId = String(socketId);
-		// console.log(user);
+		
+
+		if (user)
+		{
+			user.socketId = String(socketId);
+		}
 	}
 }
+
