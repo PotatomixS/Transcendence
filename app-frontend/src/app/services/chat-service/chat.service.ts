@@ -1,8 +1,6 @@
 import { Injectable } from '@angular/core';
-// import * as io from 'socket.io-client';
 import { io } from 'socket.io-client';
 import { Profile, ProfileService } from '../profile-service/profile.service';
-
 import { Observable } from 'rxjs';
 
 @Injectable({
