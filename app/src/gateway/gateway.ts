@@ -1,34 +1,31 @@
-// WebSocket ibs 
-
 import { OnModuleInit } from '@nestjs/common';
 import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-
-// Prisna libs
-
 import { PrismaService } from "src/prisma/prisma.service";
 import { PrismaClient, Prisma } from '@prisma/client'
+
+
+
+
 
 @WebSocketGateway({cors: {origin: '*'}})
 export class MyGateway
 {
-	constructor(
-		private prisma: PrismaService,
-	) {}
-
+	constructor( private prisma: PrismaService,	) {}
 	@WebSocketServer()
 	server: Server;
 
 
 
-	//	Records the Socket Id
+
+	/*
+	**		___________________     Get Socket at start     ___________________
+	*/
 
 	onModuleInit()
 	{
 		this.server.on('connection', (socket) =>
 		{
-			console.log(socket.id);
-
 			this.server.to(socket.id).emit('InitSocketId', socket.id);
 		})
 	}
@@ -36,45 +33,103 @@ export class MyGateway
 
 
 
-	// Waits for a message to be recieved
+	@SubscribeMessage('newUserAndSocketId')
+	onNewUserAndSocketId(@MessageBody() body: any)
+	{
+		body.userName = "ahernand";  //		Borrar
+		this.ft_get_user(body.userName, body.socketId);
+	}
+
+
+
+
+	async ft_get_user(userName: String, p_socketId: String)
+	{
+		const user = await this.prisma.user.findUnique
+		({
+			where: 
+			{
+				login_42: String(userName),
+			},
+		});
+		
+		if (user)
+		{
+			user.socketId = String(p_socketId);
+
+			await this.prisma.user.update
+			({
+				where:
+				{
+					id: user.id
+				},
+				data:
+				{
+					socketId: String(p_socketId),
+				},
+			});
+		}
+	}
+
+
+
+
+
+
+
+
+	/*
+	**		______________     Receive and distribute a message     ______________
+	*/
 
 	@SubscribeMessage('newMessage')
 	onNewMessage(@MessageBody() body: any)
 	{
 		const msg: string = String(body.message);
 
+		body.user = "ahernand";								// Borrar
+
 		if (msg.startsWith("/join"))
 		{
-			var startIndex = msg.indexOf(" ") + 1;
-			var room = msg.substring(startIndex);
-
-			console.log(room);
-			this.ft_join_channel(room, body.userName);
-			this.ft_emit(room);
+			this.ft_join(body);
 		}
-
-		/*
-		if (body.startsWith("/dm"))
+		else if (msg.startsWith("/dm"))
 		{
-			var startIndex = body.indexOf(" ") + 1;
-			var user_parsed = body.substring(startIndex);
-
-			console.log(user_parsed);
+			this.ft_dm(body);
+		}
+		else if (msg.startsWith("/leave"))
+		{
+			this.ft_leave(body);
 		}
 		else
 		{
-			this.server.emit('onMessage',
-			{
-				user: body.userName,
-				message: body.message,
-			});
-		}*/
+			this.ft_send(body);
+		}
 	}
-	
-	async ft_join_channel(channelName: string, user: string)
-	{
-		// Create Channels
 
+
+
+
+
+
+
+
+	/*
+	**		_________________________     ft_join     _________________________
+	*/
+	
+	async ft_join(body: any)
+	{
+
+		//              ______     Busca y crea canales     ______
+		
+		const msg: string = String(body.message);
+		
+		var startIndex = msg.indexOf(" ") + 1;
+		
+		var channelName = msg.substring(startIndex);
+		
+		
 		const channel_exists = await this.prisma.channel.findUnique
 		({
 			where:
@@ -82,7 +137,7 @@ export class MyGateway
 				Name: channelName,
 			},
 		});
-
+		
 		if (!channel_exists)
 		{
 			const channel8 = await this.prisma.channel.create
@@ -94,108 +149,159 @@ export class MyGateway
 				},
 			});
 		}
-
-
-		//exit channel that was on 
-
-		// Join list on server
-
+		
+		
+		// 			 _____     Crea y elimina JoinedChannels     _____
+		
 		const join_channel = await this.prisma.joinedChannels.findUnique
 		({
 			where:
 			{
-				idUser: user,
+				idUser: body.user,
+				idChannel: channelName,
+			},
+		});
+		
+		if (join_channel)
+		{
+			const deleteUser = await this.prisma.joinedChannels.delete
+			({
+				where:
+				{
+					idUser: body.user,
+				},
+			})
+		}
+		
+		const joined_channel_table = await this.prisma.joinedChannels.create
+		({
+			data:
+			{
+				idUser: body.user,
+				idChannel: channelName,
+			},
+		});
+	}
+	
+	
+	
+
+	
+
+
+
+	/*
+	**		_________________________     ft_leave     _________________________
+	*/
+	
+	async  ft_leave(body: any)
+	{
+		const isUserinJoinedChannel = await this.prisma.joinedChannels.findUnique
+		({
+			where:
+			{
+				idUser: body.user,
 			},
 		});
 
-		if (!join_channel)
+		if (isUserinJoinedChannel)
 		{
-			const joined_channel_table = await this.prisma.joinedChannels.create
+			const deleteUser = await this.prisma.joinedChannels.delete
 			({
-				data:
+				where:
 				{
-					idUser: user,
-					idChannel: channelName,
+					idUser: body.user,
 				},
+			})
+		}
+	}
+
+
+
+
+
+
+
+
+	/*
+	**		_________________________     ft_dm     _________________________
+	*/
+
+	async ft_dm(body: any)
+	{
+		
+		//              ______     Busca y crea canales     ______
+
+		const words = body.message.split(' ');
+		const actual_message = words[words.length - 1];
+
+		const user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: String(body.user),
+			},
+		});
+
+		if (user)
+		{
+			this.server.to(user.socketId).emit('onMessage',
+			{
+				user: body.userName,
+				message: "[private] " + actual_message,
 			});
 		}
 	}
 
-	async ft_emit(channelName: string)
+
+
+
+
+
+
+
+	/*
+	**		_________________________     ft_emit     _________________________
+	*/
+
+
+	async ft_send(body: any)
 	{
-	    const joinedChannels = await this.prisma.joinedChannels.findMany
+		const channel_user = await this.prisma.joinedChannels.findFirst
 		({
 			where:
 			{
-				parameter: channelName,
+				idUser: body.user,
 			},
 		});
 
-
-
-
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	// Waits for a user to register in the db
-
-
-	@SubscribeMessage('newUserAndSocketId')
-	onNewUserAndSocketId(@MessageBody() body: any)
-	{
-		
-		this.ft_get_user(body.userName, body.socketId);
-	}
-
-	async ft_get_user(userName: String, socketId: String)
-	{
-		const user = await this.prisma.user.findUnique
-		({
-			where: 
-			{
-				login_42: String(userName),
-			},
-		});
-		
-
-		if (user)
+		if (channel_user)
 		{
-			user.socketId = String(socketId);
+			const joinedChannels = await this.prisma.joinedChannels.findMany
+			({
+				where:
+				{
+					idChannel: channel_user.idChannel,
+				},
+			});
+
+
+			for (const joinedChanel_gotten of joinedChannels)
+			{
+
+				const user_to_find = await this.prisma.user.findUnique
+				({
+					where:
+					{
+						login_42: joinedChanel_gotten.idUser,
+					},
+				});
+				this.server.to(user_to_find.socketId).emit('onMessage',
+				{
+					user: body.userName,
+					message: body.message,
+				});
+			}
 		}
 	}
 }
-

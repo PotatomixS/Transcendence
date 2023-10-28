@@ -38,6 +38,7 @@ export class ChatService
 		profileService.getProfile().subscribe((data) => 
 		{
 			this.userName = data.nickname;
+			console.log("¿Quién es?: " + this.userName);
 		});
 
 	
