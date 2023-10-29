@@ -36,7 +36,6 @@ export class MyGateway
 	@SubscribeMessage('newUserAndSocketId')
 	onNewUserAndSocketId(@MessageBody() body: any)
 	{
-		body.userName = "ahernand";  //		Borrar
 		this.ft_get_user(body.userName, body.socketId);
 	}
 
@@ -86,8 +85,9 @@ export class MyGateway
 	onNewMessage(@MessageBody() body: any)
 	{
 		const msg: string = String(body.message);
+		console.log(body.userName);
 
-		body.user = "ahernand";								// Borrar
+		// body.user = "ahernand";								// Borrar
 
 		if (msg.startsWith("/join"))
 		{
@@ -157,7 +157,7 @@ export class MyGateway
 		({
 			where:
 			{
-				idUser: body.user,
+				idUser: body.userName,
 				idChannel: channelName,
 			},
 		});
@@ -168,7 +168,7 @@ export class MyGateway
 			({
 				where:
 				{
-					idUser: body.user,
+					idUser: body.userName,
 				},
 			})
 		}
@@ -177,7 +177,7 @@ export class MyGateway
 		({
 			data:
 			{
-				idUser: body.user,
+				idUser: body.userName,
 				idChannel: channelName,
 			},
 		});
@@ -200,7 +200,7 @@ export class MyGateway
 		({
 			where:
 			{
-				idUser: body.user,
+				idUser: body.userName,
 			},
 		});
 
@@ -210,7 +210,7 @@ export class MyGateway
 			({
 				where:
 				{
-					idUser: body.user,
+					idUser: body.userName,
 				},
 			})
 		}
@@ -233,13 +233,13 @@ export class MyGateway
 		//              ______     Busca y crea canales     ______
 
 		const words = body.message.split(' ');
-		const actual_message = words[words.length - 1];
+		const actual_message = words.slice(2).join(' ');
 
 		const user = await this.prisma.user.findUnique
 		({
 			where:
 			{
-				login_42: String(body.user),
+				login_42: String(words[1]),
 			},
 		});
 
@@ -271,7 +271,7 @@ export class MyGateway
 		({
 			where:
 			{
-				idUser: body.user,
+				idUser: body.userName,
 			},
 		});
 
