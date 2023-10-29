@@ -24,7 +24,16 @@ model User {
 	email_42		String
 	img_str			String		@default("default_user.png")
 
+	elo				Int
+
 	// socket_id		Int
+}
+
+model Friends {
+	id					Int			@id @default(autoincrement())
+
+	idUser1				String
+	idUser2				String
 }
 
 model JoinedChannels {
@@ -39,8 +48,47 @@ model Channel {
 	Password			String
 }
 
-model Blocked {
+
+
+
+
+
+
+
+model BlockedChannel {
 	id					Int			@id @default(autoincrement())
 	idUser				String
 	idChannel			String
+}
+
+model BlockedUsers {
+	id					Int			@id @default(autoincrement())
+	userBlocker			String
+	userBlocked			String
+}
+
+
+
+
+
+
+
+
+model gameRooms {
+	id					Int			@id @default(autoincrement())
+	playerLeft			String
+	playerRight			String
+}
+
+model viewers {
+	id					Int			@id @default(autoincrement())
+	idUserWatching		String
+	idGameRoom			Int
+}
+
+model matches {
+	id					Int			@id @default(autoincrement())
+
+	idUsuarioVictoria	Int
+	idUsuarioDerrota	Int
 }

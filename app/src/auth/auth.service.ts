@@ -78,6 +78,7 @@ export class AuthService
 						nickname: user_gotten,
 						email_42: email_gotten,		//CHAGNE
 						socketId: "",
+						elo: 0,
 					},
 				});
 
@@ -248,8 +249,8 @@ export class AuthService
 			{
 				from: 'ft_transcendence_penitencia@outlook.com',
 				to: str_email,
-				subject: 'Hello from Node.js',
-				text: 'You are going away to maybe never no more Norway see, your homeland behold..\nYour code is : ' + random_str,
+				subject: 'TURURURU',
+				text: 'YASIFJOSFIJ SJIODIASODMNKSNDK AFIJISJF ..\nY_o_u_r _c_o_d_e_ _i_s_ _:___' + random_str,
 			};
 		
 			const info = await transporter.sendMail(mailOptions);
