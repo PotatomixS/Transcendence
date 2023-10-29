@@ -16,7 +16,7 @@ export class ChatService
 
 	sendMessage(message: string)
 	{
-		this.socket.emit('newMessage', message);
+		this.socket.emit('newMessage', {userName: this.userName, message: message});
 	}
 
 	getMessages()
@@ -38,6 +38,7 @@ export class ChatService
 		profileService.profile.subscribe((data) => 
 		{
 			this.userName = data.nickname;
+			console.log("¿Quién es?: " + this.userName);
 		});
 	
 		this.socket.on('connect', () =>
@@ -48,4 +49,4 @@ export class ChatService
 			});
 		});
 	}
-} 
+}

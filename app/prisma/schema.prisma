@@ -26,3 +26,21 @@ model User {
 
 	// socket_id		Int
 }
+
+model JoinedChannels {
+	id					Int			@id @default(autoincrement())
+	idUser				String		@unique
+	idChannel			String
+}
+
+model Channel {
+	id					Int			@id @default(autoincrement())
+	Name				String		@unique
+	Password			String
+}
+
+model Blocked {
+	id					Int			@id @default(autoincrement())
+	idUser				String
+	idChannel			String
+}
