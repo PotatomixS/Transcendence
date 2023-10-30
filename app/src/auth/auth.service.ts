@@ -181,6 +181,7 @@ export class AuthService
 			login_42: user.login_42,
 			nickname: user.nickname,
 			img_str: user.img_str,
+			auth2FA: user.auth2FA,
 			access_token: token.access_token
 		};
 	}

@@ -60,6 +60,7 @@ export class LoginComponent
           if (res?.response)
           {
             //ok
+            this.profileService.profile.next(res);
             this.authService.setToken(res.access_token);
             this.authService.logged.next(true);
           }
