@@ -101,10 +101,23 @@ export class MyGateway
 		{
 			this.ft_leave(body);
 		}
+		else if (msg.startsWith("/block"))
+		{
+			this.ft_block(body);
+		}
+		else if (msg.startsWith("/unblock"))
+		{
+			this.ft_unblock(body);
+		}
+		else if (msg.startsWith("/list"))
+		{
+			this.ft_list(body);
+		}
 		else
 		{
 			this.ft_send(body);
 		}
+		//profile
 	}
 
 
@@ -121,66 +134,97 @@ export class MyGateway
 	async ft_join(body: any)
 	{
 
-		//              ______     Busca y crea canales     ______
+		//              ______     Echar si ya está joineado     ______
 		
-		const msg: string = String(body.message);
-		
-		var startIndex = msg.indexOf(" ") + 1;
-		
-		var channelName = msg.substring(startIndex);
-		
-		
-		const channel_exists = await this.prisma.channel.findUnique
-		({
-			where:
-			{
-				Name: channelName,
-			},
-		});
-		
-		if (!channel_exists)
-		{
-			const channel8 = await this.prisma.channel.create
-			({
-				data:
-				{
-					Name: channelName,
-					Password: "pass_add",
-				},
-			});
-		}
-		
-		
-		// 			 _____     Crea y elimina JoinedChannels     _____
-		
-		const join_channel = await this.prisma.joinedChannels.findUnique
+		const is_on_channel_alredy = await this.prisma.joinedChannels.findUnique
 		({
 			where:
 			{
 				idUser: body.userName,
-				idChannel: channelName,
 			},
 		});
-		
-		if (join_channel)
+
+		if (is_on_channel_alredy)
 		{
-			const deleteUser = await this.prisma.joinedChannels.delete
+			const this_user = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					login_42: body.userName,
+				},
+			});
+		
+			this.server.to(this_user.socketId).emit('onMessage',
+			{
+				user: "Server",
+				message: "You are alredy in a channel, joputa",
+			});
+		}
+
+
+		if (!is_on_channel_alredy)
+		{
+			//              ______     Busca y crea canales     ______
+			
+			const msg: string = String(body.message);
+			
+			var startIndex = msg.indexOf(" ") + 1;
+			
+			var channelName = msg.substring(startIndex);
+			
+			
+			const channel_exists = await this.prisma.channel.findUnique
+			({
+				where:
+				{
+					Name: channelName,
+				},
+			});
+			
+			if (!channel_exists)
+			{
+				const channel8 = await this.prisma.channel.create
+				({
+					data:
+					{
+						Name: channelName,
+						Password: "pass_add",
+					},
+				});
+			}
+			
+			
+			// 			 _____     Crea y elimina JoinedChannels     _____
+			
+			const join_channel = await this.prisma.joinedChannels.findUnique
 			({
 				where:
 				{
 					idUser: body.userName,
+					idChannel: channelName,
 				},
-			})
-		}
-		
-		const joined_channel_table = await this.prisma.joinedChannels.create
-		({
-			data:
+			});
+			
+			if (join_channel)
 			{
-				idUser: body.userName,
-				idChannel: channelName,
-			},
-		});
+				const deleteUser = await this.prisma.joinedChannels.delete
+				({
+					where:
+					{
+						idUser: body.userName,
+					},
+				})
+			}
+			
+			const joined_channel_table = await this.prisma.joinedChannels.create
+			({
+				data:
+				{
+					idUser: body.userName,
+					idChannel: channelName,
+				},
+			});
+		}
 	}
 	
 	
@@ -230,7 +274,7 @@ export class MyGateway
 	async ft_dm(body: any)
 	{
 		
-		//              ______     Busca y crea canales     ______
+		//              ______     divide las palabras     ______
 
 		const words = body.message.split(' ');
 		const actual_message = words.slice(2).join(' ');
@@ -243,7 +287,28 @@ export class MyGateway
 			},
 		});
 
-		if (user)
+		const isBlocked = await this.prisma.blockedUsers.findFirst
+		({
+			where:
+			{
+				userBlocked: String(user.login_42),
+				userBlocker: String(body.userName),
+			},
+		});
+		
+		const urBlocked = await this.prisma.blockedUsers.findFirst
+		({
+			where:
+			{
+				userBlocked: String(body.userName),
+				userBlocker: String(user.login_42),
+			},
+		});
+
+
+
+		
+		if (user && !isBlocked && !urBlocked)
 		{
 			this.server.to(user.socketId).emit('onMessage',
 			{
@@ -261,12 +326,144 @@ export class MyGateway
 
 
 	/*
-	**		_________________________     ft_emit     _________________________
+	**		_______________________     ft_block     _______________________
+	*/
+
+	async ft_block(body: any)
+	{
+		//              ______     buscar persona a bloquear     ______
+
+		const words = body.message.split(' ');
+
+		const user2block = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: String(words[1]),
+			},
+		});
+
+		//              ______     Meterla en la tabla de blocks     ______
+		if (user2block && user2block.login_42 != body.userName)
+		{
+			console.log("Asado");
+			const blockCard = await this.prisma.blockedUsers.create
+			({
+				data:
+				{
+					userBlocker: body.userName,
+					userBlocked: words[1],
+				},
+			});
+		}
+	}
+
+
+
+
+
+
+
+
+	/*
+	**		_______________________     ft_unblock     _______________________
+	*/
+
+	async ft_unblock(body: any)
+	{
+		//              ______     buscar persona a bloquear     ______
+
+		const words = body.message.split(' ');
+
+		const user2unblock = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: String(words[1]),
+			},
+		});
+
+		//              ______     Meterla en la tabla de blocks     ______
+		if (user2unblock)
+		{
+			const toUnBlockTable = await this.prisma.blockedUsers.findFirst
+			({
+				where:
+				{
+					userBlocker: body.userName,
+					userBlocked: words[1],
+				},
+			});
+
+			console.log("UnPalacios");
+			const blockCard = await this.prisma.blockedUsers.delete
+			({
+				where:
+				{
+					id: toUnBlockTable.id,
+				},
+			});
+		}
+	}
+
+
+
+
+	/*
+	**		_______________________     ft_list     _______________________
+	*/
+
+	async ft_list(body: any)
+	{
+		//              ______     buscar channels     ______
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		const all_channels = await this.prisma.channel.findMany
+		({
+			where:
+			{
+			},
+		});
+		
+		this.server.to(this_user.socketId).emit('onMessage',
+		{
+			user: "",
+			message: "Channels:",
+		});
+		
+		for (const each_channel of all_channels)
+		{
+			this.server.to(this_user.socketId).emit('onMessage',
+			{
+				user: "",
+				message: ("-   " + each_channel.Name),
+			});
+		}
+	}
+
+
+
+
+
+
+
+
+	/*
+	**		_________________________     ft_send     _________________________
 	*/
 
 
 	async ft_send(body: any)
 	{
+		//       ______     Encuentra el canal en el que está el user que envía     ______
+		
 		const channel_user = await this.prisma.joinedChannels.findFirst
 		({
 			where:
@@ -274,7 +471,9 @@ export class MyGateway
 				idUser: body.userName,
 			},
 		});
-
+		
+		//       ______     Encuentra todos los joinedChannels con todos los users de ese canal     ______
+		
 		if (channel_user)
 		{
 			const joinedChannels = await this.prisma.joinedChannels.findMany
@@ -284,23 +483,57 @@ export class MyGateway
 					idChannel: channel_user.idChannel,
 				},
 			});
-
+			
+			
+			//       ______     Saca el user de la string y se los envvía       ______
 
 			for (const joinedChanel_gotten of joinedChannels)
 			{
-
-				const user_to_find = await this.prisma.user.findUnique
+				const isBlocked = await this.prisma.blockedUsers.findFirst
 				({
 					where:
 					{
-						login_42: joinedChanel_gotten.idUser,
+						userBlocked: String(joinedChanel_gotten.idUser),
+						userBlocker: String(body.userName),
 					},
 				});
-				this.server.to(user_to_find.socketId).emit('onMessage',
-				{
-					user: body.userName,
-					message: body.message,
+				
+				const urBlocked = await this.prisma.blockedUsers.findFirst
+				({
+					where:
+					{
+						userBlocked: String(body.userName),
+						userBlocker: String(joinedChanel_gotten.idUser),
+					},
 				});
+
+
+
+				if (!isBlocked && !urBlocked)
+				{
+					const user_to_find = await this.prisma.user.findUnique
+					({
+						where:
+						{
+							login_42: joinedChanel_gotten.idUser,
+						},
+					});
+
+					// const USERNICKNAME = await this.prisma.user.findUnique
+					// ({
+					// 	where:
+					// 	{
+					// 		login_42: body.userName,
+					// 	},
+					// });
+
+					this.server.to(user_to_find.socketId).emit('onMessage',
+					{
+						// user: USERNICKNAME.nickname,
+						user: body.userName,
+						message: "[" + channel_user.idChannel + "] "  + body.message,
+					});
+				}
 			}
 		}
 	}
