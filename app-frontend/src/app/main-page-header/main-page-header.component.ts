@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
 import { Profile, ProfileService } from '../services/profile-service/profile.service';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
+import { AuthService } from '../services/auth-service/auth.service';
+import {APP_BASE_HREF} from '@angular/common';
 
 @Component({
   selector: 'app-main-page-header',
@@ -13,7 +15,7 @@ export class MainPageHeaderComponent {
     profile: Observable<Profile> = this.service.profile.asObservable();
     profileImage: any;
 
-    constructor(private service: ProfileService, private http: HttpClient, private route: ActivatedRoute) 
+    constructor(private service: ProfileService, private auth: AuthService, private http: HttpClient, private router: Router) 
     {
     }
     ngOnInit()
@@ -32,5 +34,11 @@ export class MainPageHeaderComponent {
               )
           });
         });
+    }
+
+    Logout()
+    {
+      this.auth.setToken("");
+      this.auth.logged.next(false);
     }
 }

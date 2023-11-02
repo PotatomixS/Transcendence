@@ -40,6 +40,11 @@ export class AuthService {
     };
     return this.http.post<any>('api/auth/checkCode', params, { 'headers': new HttpHeaders() });
   }
+
+  get42URL(): Observable<any>
+  {
+    return this.http.post<any>('api/auth/get42URL', {});
+  }
 }
 
 @Injectable({

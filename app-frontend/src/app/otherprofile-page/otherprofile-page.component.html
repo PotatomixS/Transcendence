@@ -1,0 +1,32 @@
+<div class="mainComponent">
+    <div class="formContainer">
+        <div class="profile-image box">
+            <h2>PERFIL</h2>
+            <img [src]="profileImage">
+            <h2>{{profile.nickname}}</h2>
+            <button type="button">+ Añadir como amigo</button>
+        </div>
+        <div class="profile-stats box">
+            <h2>ESTADÍSTICAS</h2>
+            <p>Elo: {{profile.elo}}</p>
+            <br>
+            <p>Wins: {{profile.wins}}</p>
+            <p>Loses: {{profile.loses}}</p>
+        </div>
+        <div class="profile-matches box">
+            <h2>HISTORIAL</h2>
+            <table>
+                <tr>
+                    <th>User</th>
+                    <th>Gamemode</th>
+                    <th>Result</th>
+                </tr>
+                <tr *ngFor="let match of matches">
+                    <td>{{match.against}}</td>
+                    <td>{{match.gamemode}}</td>
+                    <td>{{match.result}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>

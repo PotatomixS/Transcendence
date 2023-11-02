@@ -9,6 +9,15 @@ export interface Profile {
   login_42: string;
   img_str: string;
   auth2FA: boolean;
+  elo: number;
+  wins: number;
+  loses: number;
+}
+
+export interface Match {
+  against: string,
+  gamemode: string,
+  result: string
 }
 
 @Injectable({
@@ -24,17 +33,37 @@ export class ProfileService {
       nickname: "",
       login_42: "",
       img_str: "default_user.png",
-      auth2FA: false
+      auth2FA: false,
+      elo: 0,
+      wins: 0,
+      loses: 0
     });
   }
 
   getProfile() {
-    console.log(this.profile.getValue());
     const params = {
       login_42: this.profile.getValue().login_42
     };
 
-    this.http.post<Profile>('api/users/profileInfo', params).subscribe(res => this.profile.next(res));
+    this.http.post<Profile>('api/users/profileInfo', params).subscribe(res => {
+      this.profile.next(res);
+    });
+  }
+
+  getOtherProfile(login_42: string) : Observable<Profile> {
+    const params = {
+      login_42: login_42
+    };
+
+    return this.http.post<Profile>('api/users/profileInfo', params);
+  }
+
+  getProfileMatches(login_42: string) : Observable<any[]>{
+    const params = {
+      login_42: login_42
+    };
+
+    return this.http.post<any[]>('api/users/profileInfoMatches', params);
   }
 
   getProfileImage(image: string): Observable<Blob> {

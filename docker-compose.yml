@@ -28,6 +28,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV}
       PORT: ${BACKEND_PORT}
+      
 
     ports:
       - ${BACKEND_PORT}:${BACKEND_PORT}
@@ -35,6 +36,9 @@ services:
 
     networks:
       - nesjs-network
+
+    env_file:
+    - .env
 
 
 

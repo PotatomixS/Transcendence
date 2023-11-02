@@ -17,12 +17,12 @@ export class AppComponent
 	title = 'Transcendence';
 
 	ShowLogin:	boolean;
-	loggedIn: Observable<boolean>;
+	ShowPage: boolean;
 	
 	constructor(private service: AuthService, private profileService: ProfileService, private http: HttpClient, private route: ActivatedRoute) 
 	{
-		this.ShowLogin = true;
-		this.loggedIn = this.service.logged;
+		this.ShowLogin = false;
+		this.ShowPage = false;
 	}
 
 	private getQueryParameter(): string {
@@ -32,17 +32,20 @@ export class AppComponent
 	
 	ngOnInit() 
 	{
-		this.loggedIn.subscribe(res => {
+		this.service.logged.subscribe(res => {
 			this.ShowLogin = !res;
+			this.ShowPage = res;
+			if (this.ShowPage == true)
+				return;
 		});
 
 		if (this.service.getToken().length > 0)
 		{
 			this.service.logged.next(true);
-			return;
 		}
-		if (this.getQueryParameter() != null && this.getQueryParameter().length > 0)
+		else if (this.getQueryParameter() != null && this.getQueryParameter().length > 0)
 		{
+			this.ShowLogin = false;
 			this.service.getSign(this.getQueryParameter()).subscribe(
 				response => {
 					//profile update
@@ -50,20 +53,23 @@ export class AppComponent
 						id: "",
 						nickname: "",
 						login_42: response.login_42,
-						img_str: "",
-						auth2FA: false
+						img_str: "default_user.png",
+						auth2FA: false,
+						elo: 0,
+						wins: 0,
+						loses: 0
 					};
 					this.profileService.profile.next(newProfile);
 
 					if (response?.access_token)
 					{
-						//profile update
-						newProfile.nickname = response.nickname;
-						newProfile.img_str = response.img_str;
-						this.profileService.profile.next(newProfile);
-
 						this.service.setToken(response.access_token);
+
+						this.profileService.getProfile();
+
 						this.service.logged.next(true);
+
+						this.ShowPage = true;
 					}
 					else
 					{
@@ -75,6 +81,7 @@ export class AppComponent
 
 							this.service.faActive.next(true);
 						}
+						this.ShowLogin = true;
 						console.log(response?.error);
 					}
 				},

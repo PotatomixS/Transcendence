@@ -4,10 +4,11 @@
     height: 100%;
 }
 
-.formContainer, .historyContainer
+.formContainer
 {
     padding: 10%;
     display: flex;
+    justify-content: space-between;
     align-items: stretch;
 }
 
@@ -15,7 +16,7 @@
     display: none;
 }
 
-.profile-form {
+.profile-image {
     flex-grow: 1;
 }
 
@@ -47,6 +48,12 @@ button {
     border-radius: 10px;
 }
 
+.profile-image img {
+    aspect-ratio: 1 / 1;
+    height: 100px;
+    border-radius: 50%;
+}
+
 .profile-matches table {
     width: 100%;
     font-size: 24px;
@@ -68,3 +75,4 @@ button {
     color: white;
     font-size: 28px;
 }
+

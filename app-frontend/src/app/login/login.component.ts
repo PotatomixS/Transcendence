@@ -46,6 +46,13 @@ export class LoginComponent
         this.onSubmit(values);
       });
   }
+
+  redirect()
+  {
+    this.authService.get42URL().subscribe(res => {
+      window.location.href = res?.url;
+    });
+  }
   
   onSubmit(values: any)
   {

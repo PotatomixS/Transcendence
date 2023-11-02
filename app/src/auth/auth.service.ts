@@ -13,13 +13,6 @@ import axios from 'axios';
 import * as nodemailer from 'nodemailer';
 
 
-const clientId = "u-s4t2ud-5e8f32562427f9c449ce50ffca3a6f29bae38a94655ea0187a79435bbcf03307";
-const redirectUri = "http://localhost/pong";
-const clientSecret = "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";
-const code2 = "0888ae267f7cbcfdba94cf0d5546476bcb97e45fcbf24bc14e25d06237b4de25";
-const grantType = "authorization_code";
-
-
 
 
 // _____    S I G N     U P     ______
@@ -29,6 +22,10 @@ const grantType = "authorization_code";
 @Injectable({})
 export class AuthService
 {
+	clientId = this.config.get('CLIENT_UID');
+	clientSecret = this.config.get('CLIENT_SECRET');
+	redirectUri = this.config.get('REDIRECT_URI');
+	grantType = "authorization_code";
 
 	constructor(
 		private prisma: PrismaService,
@@ -36,6 +33,13 @@ export class AuthService
 		private config: ConfigService
 	) {}
 
+
+	async get42URL()
+	{
+		return {
+			url: 'https://api.intra.42.fr/oauth/authorize?client_id=' + this.clientId + '&redirect_uri=' + encodeURI(this.redirectUri) + '&response_type=code'
+		}
+	}
 
 	// _____    S I G N     U P     ______
 	
@@ -69,7 +73,7 @@ export class AuthService
 		{
 			try
 			{
-				const user = await this.prisma.user.create
+				const newUser = await this.prisma.user.create
 				({
 					data:
 					{
@@ -77,16 +81,17 @@ export class AuthService
 						login_42: user_gotten,
 						nickname: user_gotten,
 						email_42: email_gotten,		//CHAGNE
-						socketId: "",
-						elo: 0,
+						socketId: ""
 					},
 				});
 
 				return {
-					login_42: user.login_42,
-					nickname: user.nickname,
-					email: user.email_42,
-					img_str: user.img_str
+					login_42: newUser.login_42,
+					nickname: newUser.nickname,
+					email: newUser.email_42,
+					img_str: newUser.img_str,
+					wins: 0,
+					loses: 0
 				};
  
 			}
@@ -126,12 +131,29 @@ export class AuthService
 			};
 		}
 
+		const wins = await this.prisma.matches.count
+			({
+				where: {
+					idUsuarioVictoria: user.id
+				}
+			});
+		
+		const loses = await this.prisma.matches.count
+			({
+				where: {
+					idUsuarioDerrota: user.id
+				}
+			});
+
 		//	Return User
 		const token = await this.signToken(user.id);
 		return {
 			login_42: user.login_42,
 			nickname: user.nickname,
 			img_str: user.img_str,
+			elo: user.elo,
+			wins: wins,
+			loses: loses,
 			access_token: token.access_token
 		};
 	}
@@ -176,6 +198,20 @@ export class AuthService
 			return { error: "Invalid code "};
 
 		//	Return User
+		const wins = await this.prisma.matches.count
+			({
+				where: {
+					idUsuarioVictoria: user.id
+				}
+			});
+		
+		const loses = await this.prisma.matches.count
+			({
+				where: {
+					idUsuarioDerrota: user.id
+				}
+			});
+
 		const token = await this.signToken(user.id);
 		return {
 			response: "ok",
@@ -183,6 +219,9 @@ export class AuthService
 			nickname: user.nickname,
 			img_str: user.img_str,
 			auth2FA: user.auth2FA,
+			elo: user.elo,
+			wins: wins,
+			loses: loses,
 			access_token: token.access_token
 		};
 	}
@@ -192,16 +231,17 @@ export class AuthService
 
 	async get_user(str)
 	{
+		console.log(this.redirectUri);
 		try
 		{
 			const response = await axios.post(
 			  'https://api.intra.42.fr/oauth/token',
 			  {
-				client_id: clientId,
-				redirect_uri: redirectUri,
-				client_secret: clientSecret,
+				client_id: this.clientId,
+				redirect_uri: this.redirectUri,
+				client_secret: this.clientSecret,
 				code: str.code,
-				grant_type: grantType,
+				grant_type: this.grantType,
 			  }
 			);
 		

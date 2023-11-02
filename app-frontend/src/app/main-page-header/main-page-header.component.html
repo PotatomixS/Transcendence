@@ -3,12 +3,17 @@
         <img src="../../assets/42pong_logo.png">
     </div>
     <div class="logout">
-        <button class="42login-btn">
+        <button class="42login-btn" (click)="Logout()">
             <img src="../../assets/logout.png">
         </button>
     </div>
     <div class="profile" routerLink="/profile">
         <p>{{(profile | async)?.nickname}}</p>
         <img [src]="profileImage">
+    </div>
+    <div class="logout" routerLink="/otherprofile/bremesar">
+        <button class="42login-btn" style="color: white">
+            TEMP EJEMPLO DE ENLACE A OTRO USUARIO
+        </button>
     </div>
 </div>

@@ -24,8 +24,10 @@ model User {
 	email_42		String
 	img_str			String		@default("default_user.png")
 
-	elo				Int
+	elo				Int			@default(500)
 
+	wins			matches[]	@relation("wins")
+	loses			matches[]	@relation("loses")
 	// socket_id		Int
 }
 
@@ -88,7 +90,11 @@ model viewers {
 
 model matches {
 	id					Int			@id @default(autoincrement())
+	userWon				User   		@relation("wins", fields: [idUsuarioVictoria], references: [id])
+	userLost			User   		@relation("loses", fields: [idUsuarioDerrota], references: [id])
 
 	idUsuarioVictoria	Int
 	idUsuarioDerrota	Int
+	modoDeJuego			String		//Normal, Modificado
+	ranked				Boolean
 }

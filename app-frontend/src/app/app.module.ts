@@ -12,9 +12,11 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { InterceptorService,AuthService } from './services/auth-service/auth.service';
 import { ProfileService } from './services/profile-service/profile.service';
+import { OtherProfilePageComponent } from './otherprofile-page/otherprofile-page.component';
+import { LoadingPageComponent } from './loading-page/loading-page.component';
 
 @NgModule({
-  declarations: [ AppComponent, LoginComponent, MainPageHeaderComponent, ProfilePageComponent, MainPageChatComponent, PongPageComponent ],
+  declarations: [ AppComponent, LoginComponent, MainPageHeaderComponent, ProfilePageComponent, OtherProfilePageComponent, MainPageChatComponent, PongPageComponent, LoadingPageComponent ],
   imports: [ BrowserModule, AppRoutingModule, ReactiveFormsModule, HttpClientModule],
   providers: [
     {

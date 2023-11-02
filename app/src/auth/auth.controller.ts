@@ -18,4 +18,9 @@ export class AuthController {
     checkCode(@Body() str) {
         return this.authService.check_code(str);
     }
+
+    @Post('get42URL')
+    get42URL() {
+        return this.authService.get42URL();
+    }
 }

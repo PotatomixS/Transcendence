@@ -27,6 +27,11 @@ export class UserController {
         return new StreamableFile(file);
     }
 
+    @Post('profileInfoMatches')
+    getProfileInfoMatches(@Body() str) {
+        return this.userService.getProfileMatches(str);
+    }
+
     @Post('setProfileInfo')
     setProfileInfo(@Body() str) {
         return this.userService.setProfileInfo(str);

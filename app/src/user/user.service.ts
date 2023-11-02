@@ -29,20 +29,75 @@ export class UserService
 		//	Return User
 		if (!user)
 		{
-			return {
-				id: 'indefinido',
-				nickname: 'indefinida',
-				login_42: 'indefinido',
-				img_str: 'default_user.png',
-				auth2FA: false
-			}
+			return {error: "no user found."};
 		}
 
-		return user;
+		const wins = await this.prisma.matches.count
+			({
+				where: {
+					idUsuarioVictoria: user.id
+				}
+			});
+		
+		const loses = await this.prisma.matches.count
+			({
+				where: {
+					idUsuarioDerrota: user.id
+				}
+			});
+
+		return {
+			auth2FA: user.auth2FA,
+			elo: user.elo,
+			email_42: user.email_42,
+			id: user.id,
+			img_str: user.img_str,
+			login_42: user.login_42,
+			nickname: user.nickname,
+			socketId: user.socketId,
+			wins: wins,
+			loses: loses
+		};
+	}
+
+	// _____    G E T	P R O F I L E	M A T C H E S    ______
+	
+	async getProfileMatches(str)
+	{
+		//	Look for user in db
+		//console.log(str.);
+		const user = await this.prisma.user.findUnique
+		({
+			where: 
+			{
+				login_42: str.login_42
+			},
+		});
+
+		//	Return User
+		if (!user)
+		{
+			return {error: "no user found."};
+		}
+
+		const matches = await this.prisma.matches.findMany
+			({
+				where: {
+					OR: [
+						{idUsuarioVictoria: user.id},
+						{idUsuarioDerrota: user.id}
+					]
+				},
+				include: {
+					userWon: true,
+					userLost: true
+				}
+			});
+
+		return matches;
 	}
 
 	// _____    S E T	P R O F I L E	I N F O    ______
-	//TODO
 	async setProfileInfo(str)
 	{
 		let dataToUpdate = {
