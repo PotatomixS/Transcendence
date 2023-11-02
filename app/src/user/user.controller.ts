@@ -27,6 +27,21 @@ export class UserController {
         return new StreamableFile(file);
     }
 
+    @Post('addFriend')
+    addFriend(@Body() str) {
+        return this.userService.addFriend(str);
+    }
+
+    @Post('removeFriend')
+    removeFriend(@Body() str) {
+        return this.userService.removeFriend(str);
+    }
+
+    @Post('getIfFriends')
+    getIfFriends(@Body() str) {
+        return this.userService.getIfFriends(str);
+    }
+
     @Post('profileInfoMatches')
     getProfileInfoMatches(@Body() str) {
         return this.userService.getProfileMatches(str);

@@ -60,6 +60,129 @@ export class UserService
 		};
 	}
 
+	// _____    A D D	F R I E N D    ______
+	
+	async addFriend(str)
+	{
+		const user = await this.prisma.user.findUnique
+		({
+			where: 
+			{
+				login_42: str.login_42
+			}
+		});
+
+		const friend = await this.prisma.user.findUnique
+		({
+			where: 
+			{
+				login_42: str.login_42_friend
+			}
+		});
+
+		const newFriend = await this.prisma.friends.create
+		({
+			data:
+			{
+				idUser1: user.id,
+				idUser2: friend.id
+			},
+		});
+	}
+
+	// _____    R E M O V E 	F R I E N D    ______
+	
+	async removeFriend(str)
+	{
+		const friendRecord = await this.prisma.friends.deleteMany
+		({
+			where: 
+			{
+				OR:
+				[
+					{
+						AND:
+						{
+							friendUser1: {
+								login_42: {
+									equals: str.login_42
+								}
+							},
+							friendUser2: {
+								login_42: {
+									equals: str.login_42_friend
+								}
+							}
+						}
+					},
+					{
+						AND:
+						{
+							friendUser1: {
+								login_42: {
+									equals: str.login_42_friend
+								}
+							},
+							friendUser2: {
+								login_42: {
+									equals: str.login_42
+								}
+							}
+						}
+					}
+				]
+			}
+		});
+	}
+
+	// _____    G E T	I F		F R I E N D    ______
+	
+	async getIfFriends(str)
+	{
+		const areFriends = await this.prisma.friends.count
+		({
+			where: 
+			{
+				OR:
+				[
+					{
+						AND:
+						{
+							friendUser1: {
+								login_42: {
+									equals: str.login_42
+								}
+							},
+							friendUser2: {
+								login_42: {
+									equals: str.login_42_friend
+								}
+							}
+						}
+					},
+					{
+						AND:
+						{
+							friendUser1: {
+								login_42: {
+									equals: str.login_42_friend
+								}
+							},
+							friendUser2: {
+								login_42: {
+									equals: str.login_42
+								}
+							}
+						}
+					}
+				]
+			}
+		});
+		console.log(str);
+		console.log(areFriends);
+		return (areFriends >= 1);
+	}
+
 	// _____    G E T	P R O F I L E	M A T C H E S    ______
 	
 	async getProfileMatches(str)

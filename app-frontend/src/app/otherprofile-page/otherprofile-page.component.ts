@@ -14,6 +14,8 @@ export class OtherProfilePageComponent implements OnInit {
   profile: Profile;
   profileImage: any;
 
+  isFriend: boolean;
+
   matches: Match[];
 
   constructor(private service: ProfileService, private aroute: ActivatedRoute) 
@@ -28,6 +30,8 @@ export class OtherProfilePageComponent implements OnInit {
       wins: 0,
       loses: 0
     };
+
+    this.isFriend = false;
 
     this.matches = [];
   }
@@ -72,8 +76,24 @@ export class OtherProfilePageComponent implements OnInit {
             this.matches.push(matchInfo);
           }
         ); 
-      })
+      });
+      this.service.getIfFriends(this.profile.login_42).subscribe(res => {
+        this.isFriend = res;
+      });
     });
+  }
 
+  AddFriend()
+  {
+    this.service.addFriend(this.profile.login_42).subscribe(res => {
+      this.isFriend = true;
+    });
+  }
+
+  RemoveFriend()
+  {
+    this.service.removeFriend(this.profile.login_42).subscribe(res => {
+      this.isFriend = false;
+    });
   }
 }

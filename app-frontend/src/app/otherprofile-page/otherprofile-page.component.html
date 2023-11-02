@@ -4,7 +4,8 @@
             <h2>PERFIL</h2>
             <img [src]="profileImage">
             <h2>{{profile.nickname}}</h2>
-            <button type="button">+ Añadir como amigo</button>
+            <button type="button" *ngIf="!isFriend" (click)="AddFriend()">+ Añadir como amigo</button>
+            <button type="button" *ngIf="isFriend" (click)="RemoveFriend()">- Dejar de ser amigo</button>
         </div>
         <div class="profile-stats box">
             <h2>ESTADÍSTICAS</h2>

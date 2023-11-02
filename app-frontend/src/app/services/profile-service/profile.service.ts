@@ -58,6 +58,33 @@ export class ProfileService {
     return this.http.post<Profile>('api/users/profileInfo', params);
   }
 
+  addFriend(login_42: string) : Observable<any> {
+    const params = {
+      login_42: this.profile.getValue().login_42,
+      login_42_friend: login_42
+    };
+
+    return this.http.post<any>('api/users/addFriend', params);
+  }
+
+  removeFriend(login_42: string) : Observable<any> {
+    const params = {
+      login_42: this.profile.getValue().login_42,
+      login_42_friend: login_42
+    };
+
+    return this.http.post<any>('api/users/removeFriend', params);
+  }
+
+  getIfFriends(login_42: string) : Observable<boolean> {
+    const params = {
+      login_42: this.profile.getValue().login_42,
+      login_42_friend: login_42
+    };
+
+    return this.http.post<boolean>('api/users/getIfFriends', params);
+  }
+
   getProfileMatches(login_42: string) : Observable<any[]>{
     const params = {
       login_42: login_42

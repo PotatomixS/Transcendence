@@ -28,14 +28,20 @@ model User {
 
 	wins			matches[]	@relation("wins")
 	loses			matches[]	@relation("loses")
+
+	friend1			Friends[]	@relation("friend1")
+	friend2			Friends[]	@relation("friend2")
 	// socket_id		Int
 }
 
 model Friends {
 	id					Int			@id @default(autoincrement())
 
-	idUser1				String
-	idUser2				String
+	friendUser1			User   		@relation("friend1", fields: [idUser1], references: [id])
+	friendUser2			User   		@relation("friend2", fields: [idUser2], references: [id])
+
+	idUser1				Int
+	idUser2				Int
 }
 
 model JoinedChannels {
