@@ -37,14 +37,15 @@ export class LoginComponent
 
   ngOnInit()
   {
-    this.faActive.subscribe(values => {
+    this.faActive.subscribe(values => 
+    {
       this.ShowFA = values;
     });
     
     this.CodeForm.valueChanges.subscribe(values =>
-      {
-        this.onSubmit(values);
-      });
+    {
+      this.onSubmit(values);
+    });
   }
 
   redirect()
@@ -61,9 +62,10 @@ export class LoginComponent
       values.Code3 && values.Code4 &&
       values.Code5 && values.Code6)
       {
-        document.getElementById("code1")?.blur();
-        this.authService.checkCode(this.profileService.profile.getValue().login_42, Code).subscribe(res => {
-          this.CodeForm.reset();
+        document.getElementById("code1")?.blur(); 
+        this.CodeForm.reset();
+        this.authService.checkCode(this.profileService.profile.getValue().login_42, Code).subscribe(res =>
+        {
           if (res?.response)
           {
             //ok
@@ -74,7 +76,7 @@ export class LoginComponent
         });
         console.log(Code);
       }
-    }
+  }
 
   onKeyDown(key: KeyboardEvent)
   {
@@ -96,28 +98,30 @@ export class LoginComponent
         return;
       }
     }
-    document.getElementById(id_list[5])?.focus();
   }
   
   onInput(Input: InputEventInit)
   {
-    var values_list: Array<string | null | undefined>;
-    var id_list: Array<string>;
-  
-    values_list = [this.CodeForm.value.Code1, this.CodeForm.value.Code2,
-                   this.CodeForm.value.Code3, this.CodeForm.value.Code4,
-                   this.CodeForm.value.Code5, this.CodeForm.value.Code6];
-    id_list = ["code1", "code2", "code3",
-               "code4", "code5", "code6"];
-    for(var it = 0; it < 6; it++)
+    requestAnimationFrame(() =>
     {
-      if (!values_list[it])
+      var values_list: Array<string | null | undefined>;
+      var id_list: Array<string>;
+    
+      values_list = [this.CodeForm.value.Code1, this.CodeForm.value.Code2,
+                     this.CodeForm.value.Code3, this.CodeForm.value.Code4,
+                     this.CodeForm.value.Code5, this.CodeForm.value.Code6];
+      id_list = ["code1", "code2", "code3",
+                 "code4", "code5", "code6"];
+      for(var it = 0; it < 6; it++)
       {
-        document.getElementById(id_list[it])?.focus();
-        return;
+        if (!values_list[it])
+        {
+          document.getElementById(id_list[it])?.focus();
+          return;
+        }
       }
-    }
-    document.getElementById(id_list[5])?.focus();
+      document.getElementById(id_list[5])?.focus();
+    })
   }
 
   onPaste(paste: ClipboardEvent)

@@ -35,8 +35,7 @@ export class ChatService
 	{
 		profileService.profile.subscribe((data) => 
 		{
-			this.userName = data.nickname;
-			console.log("¿Quién es?: " + this.userName);
+			this.userName = data.login_42;
 		});
 	
 		this.socket.on('connect', () =>
