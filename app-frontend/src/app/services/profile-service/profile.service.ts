@@ -127,7 +127,7 @@ export class ProfileService {
     }
     if (img_str != "")
       data["img_str"] = img_str;
-    this.http.post<any>('api/users/setProfileInfo', data);
+    return this.http.post<any>('api/users/setProfileInfo', data);
   }
 
   updateProfileImage(imageForm: FormData): Observable<any> {
