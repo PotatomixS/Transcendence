@@ -178,8 +178,6 @@ export class UserService
 				]
 			}
 		});
-		console.log(str);
-		console.log(areFriends);
 		return (areFriends >= 1);
 	}
 
@@ -223,6 +221,13 @@ export class UserService
 	// _____    S E T	P R O F I L E	I N F O    ______
 	async setProfileInfo(str)
 	{
+		//comprobación
+		if (str?.nickname || str.nickname == "")
+		{
+			return {error: "Nickname is empty."};
+		}
+
+		//ejecución
 		let dataToUpdate = {
 			nickname: str.nickname,
 			auth2FA: str.auth2FA

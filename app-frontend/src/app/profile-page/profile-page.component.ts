@@ -82,17 +82,25 @@ export class ProfilePageComponent implements OnInit {
       
       this.service.updateProfileImage(fd).subscribe(res => {
         console.log(res);
-        this.service.updateProfile(this.profileForm.value, res.filename);
-        alert("Updated!");
+        this.updateProfile(this.profileForm.value, res.filename);
       });
     }
     else
     {
-      this.service.updateProfile(this.profileForm.value);
-      alert("Updated!");
+      this.updateProfile(this.profileForm.value);
     }
+  }
 
-    // TODO: Use EventEmitter with form value
-    
+  updateProfile(data: any, filename: string = "")
+  {
+    this.service.updateProfile(this.profileForm.value, res.filename).subscribe(res => {
+      if (res?.error)
+      {
+        alert("Error: " + res.error);
+        return;
+      }
+      this.service.getProfile();
+      alert("Updated!");
+    });
   }
 }

@@ -75,7 +75,7 @@ export class OtherProfilePageComponent implements OnInit {
             }
             this.matches.push(matchInfo);
           }
-        ); 
+        );
       });
       this.service.getIfFriends(this.profile.login_42).subscribe(res => {
         this.isFriend = res;

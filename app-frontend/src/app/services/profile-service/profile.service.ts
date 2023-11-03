@@ -119,7 +119,7 @@ export class ProfileService {
     });
   }
 
-  updateProfile(data: any, img_str: string = "") {
+  updateProfile(data: any, img_str: string = ""): Observable<any> {
     data = {
       login_42: this.profile.getValue().login_42,
       nickname: data.nickname,
@@ -127,7 +127,7 @@ export class ProfileService {
     }
     if (img_str != "")
       data["img_str"] = img_str;
-    this.http.post<any>('api/users/setProfileInfo', data).subscribe(res => this.getProfile());
+    this.http.post<any>('api/users/setProfileInfo', data);
   }
 
   updateProfileImage(imageForm: FormData): Observable<any> {
