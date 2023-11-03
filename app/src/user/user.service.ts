@@ -222,7 +222,7 @@ export class UserService
 	async setProfileInfo(str)
 	{
 		//comprobación
-		if (str?.nickname || str.nickname == "")
+		if (!str?.nickname || str.nickname == "")
 		{
 			return {error: "Nickname is empty."};
 		}
