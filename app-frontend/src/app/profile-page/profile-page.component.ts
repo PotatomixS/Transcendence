@@ -93,7 +93,7 @@ export class ProfilePageComponent implements OnInit {
 
   updateProfile(data: any, filename: string = "")
   {
-    this.service.updateProfile(this.profileForm.value, res.filename).subscribe(res => {
+    this.service.updateProfile(this.profileForm.value, filename).subscribe(res => {
       if (res?.error)
       {
         alert("Error: " + res.error);
