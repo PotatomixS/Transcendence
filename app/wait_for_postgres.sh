@@ -5,6 +5,6 @@
 #   sleep 1
 # done
 
-npx prisma migrate dev
+# npx prisma migrate dev
 
 npm run start:dev
