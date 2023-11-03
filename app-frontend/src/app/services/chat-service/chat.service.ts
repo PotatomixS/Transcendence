@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 
 export class ChatService
 {
-	private	socket = io('http://localhost:3000');
+	private	socket = io('http://' + window.location.host + ':3000');
 	public	userName = "";
 
 	sendMessage(message: string)
@@ -19,7 +19,7 @@ export class ChatService
 
 	getMessages()
 	{
-		let observable = new Observable<{ user: String, message: String }>(observer => 
+		let observable = new Observable<{ user: String, message: String, other: any }>(observer => 
 		{
 			this.socket.on('onMessage', (data) =>
 			{

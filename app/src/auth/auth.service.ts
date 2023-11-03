@@ -85,13 +85,16 @@ export class AuthService
 					},
 				});
 
+				const token = await this.signToken(newUser.id);
 				return {
 					login_42: newUser.login_42,
 					nickname: newUser.nickname,
-					email: newUser.email_42,
 					img_str: newUser.img_str,
+					elo: newUser.elo,
 					wins: 0,
-					loses: 0
+					loses: 0,
+					access_token: token.access_token,
+					new: true
 				};
  
 			}
@@ -168,7 +171,7 @@ export class AuthService
 		const token = await this.jwt.signAsync(
 			payload,
 			{
-				expiresIn: '15m',
+				expiresIn: '60m',
 				secret: secret,
 			}
 		);
@@ -231,7 +234,6 @@ export class AuthService
 
 	async get_user(str)
 	{
-		console.log(this.redirectUri);
 		try
 		{
 			const response = await axios.post(

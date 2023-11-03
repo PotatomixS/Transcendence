@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { AuthService } from './services/auth-service/auth.service';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { ProfileService, Profile } from './services/profile-service/profile.service';
 
@@ -19,7 +19,7 @@ export class AppComponent
 	ShowLogin:	boolean;
 	ShowPage: boolean;
 	
-	constructor(private service: AuthService, private profileService: ProfileService, private http: HttpClient, private route: ActivatedRoute) 
+	constructor(private service: AuthService, private profileService: ProfileService, private http: HttpClient, private route: Router) 
 	{
 		this.ShowLogin = false;
 		this.ShowPage = false;
@@ -70,6 +70,11 @@ export class AppComponent
 						this.service.logged.next(true);
 
 						this.ShowPage = true;
+
+						if (response?.new)
+							this.route.navigate(['/profile'])
+						else
+							this.route.navigate(['/pong'])
 					}
 					else
 					{

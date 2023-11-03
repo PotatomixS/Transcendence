@@ -26,7 +26,7 @@ export class PongPageComponent implements OnInit
        this.draw2.bind(this), this.draw3.bind(this), this.draw4.bind(this),
         this.draw5.bind(this), this.draw6.bind(this), this.draw7.bind(this),
         this.draw8.bind(this), this.draw9.bind(this)];
-        this.socket = io("http://localhost:3000");
+        this.socket = io("http://" + window.location.host + ":3000");
       }
       
       ngOnInit()
