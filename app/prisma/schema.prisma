@@ -33,7 +33,7 @@ model User {
 	friend2			Friends[]	@relation("friend2")
 	// socket_id		Int
 
-	channelRol		String		@default("user")
+	channelRol		String		@default("user")		// owner / admin / user
 }
 
 model Friends {
