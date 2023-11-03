@@ -4,9 +4,19 @@ import { Server } from 'socket.io';
 import { PrismaService } from "src/prisma/prisma.service";
 import { PrismaClient, Prisma } from '@prisma/client'
 
-
-
-
+var pos =
+{
+	player1_x: 15,
+	player1_y: 405,
+	player2_x: 1240,
+	player2_y: 405,
+	player1_p: 0,
+	player2_p: 0,
+	ball_x: 628,
+	ball_y: 430,
+	ball_ang: 0,
+	ball_inc: 0
+}
 
 @WebSocketGateway({cors: {origin: '*'}})
 export class MyGateway
@@ -27,21 +37,22 @@ export class MyGateway
 		this.server.on('connection', (socket) =>
 		{
 			this.server.to(socket.id).emit('InitSocketId', socket.id);
+			this.ballLoop();
 		})
 	}
  
-
-
-
+	
+	
+	
 	@SubscribeMessage('newUserAndSocketId')
 	onNewUserAndSocketId(@MessageBody() body: any)
 	{
 		this.ft_get_user(body.userName, body.socketId);
 	}
 
-
-
-
+	
+	
+	
 	async ft_get_user(userName: String, p_socketId: String)
 	{
 		const user = await this.prisma.user.findUnique
@@ -55,7 +66,6 @@ export class MyGateway
 		if (user)
 		{
 			user.socketId = String(p_socketId);
-
 			await this.prisma.user.update
 			({
 				where:
@@ -71,24 +81,24 @@ export class MyGateway
 	}
 
 
-
-
-
-
-
-
+	
+	
+	
+	
+	
+	
 	/*
 	**		______________     Receive and distribute a message     ______________
 	*/
-
+	
 	@SubscribeMessage('newMessage')
 	onNewMessage(@MessageBody() body: any)
 	{
 		const msg: string = String(body.message);
 		console.log(body.userName);
-
+		
 		// body.user = "ahernand";								// Borrar
-
+		
 		if (msg.startsWith("/join"))
 		{
 			this.ft_join(body);
@@ -108,9 +118,9 @@ export class MyGateway
 	}
 
 
+	
 
-
-
+	
 
 
 
@@ -303,5 +313,100 @@ export class MyGateway
 				});
 			}
 		}
+	}
+
+	/*
+	**		_________________________     gameChanges     _________________________
+	*/
+
+	@SubscribeMessage('movePlayer1')
+	onMovePlayer1(@MessageBody() key: { [key: string]: boolean })
+	{
+		if (key["w"])
+		{
+			pos.player1_y -= 25;
+			if (pos.player1_y < 0)
+				pos.player1_y = 0;
+		}
+		if (key["s"])
+		{
+			pos.player1_y += 25;
+			if (pos.player1_y > 890)
+				pos.player1_y = 890;
+		}
+		this.server.emit('gameChanges', pos);
+	}
+
+	@SubscribeMessage('movePlayer2')
+	onMovePlayer2(@MessageBody() key: { [key: string]: boolean })
+	{
+		if (key["ArrowUp"])
+		{
+			pos.player2_y -= 25;
+			if (pos.player2_y < 0)
+				pos.player2_y = 0;
+		}
+		if (key["ArrowDown"])
+		{
+			pos.player2_y += 25;
+			if (pos.player2_y > 890)
+				pos.player2_y = 890;
+		}
+		this.server.emit('gameChanges', pos);
+	}
+
+
+	async ballLoop()
+	{
+		let direccion = Math.random();
+
+		if (direccion)
+			pos.ball_inc = 5;
+		else
+			pos.ball_inc = -5;
+		setInterval(() =>
+		{
+			let bounce : number | null;
+			pos.ball_x += pos.ball_inc;
+			bounce = this.hitboxCheck(pos);
+			if (bounce)
+				pos.ball_ang = bounce;
+			if (pos.ball_x < 0 || pos.ball_x > 1275)
+				pos.ball_inc *= -1;
+			this.server.emit('gameChanges', pos);
+		}, 16);
+	}
+
+	hitboxCheck(data: any): number | null
+	{
+		if (((data.ball_x + 10) > data.player1_x && (data.ball_x + 10) < data.player1_x + 15) 
+			&& ((data.ball_y + 10) > data.player1_y && (data.ball_y + 10) < data.player1_y + 70))
+		{
+			if ((data.player1_y - (data.ball_y + 10)) <= 20)
+				return Math.PI * 0.25;
+			if ((data.player1_y - (data.ball_y + 10)) > 20 && (data.player1_y - (data.ball_y + 10)) <= 50)
+				return 0;
+			if ((data.player1_y - (data.ball_y + 10)) > 50)
+				return Math.PI * 1,75;
+		}
+		if (((data.ball_x + 10) > data.player2_x && (data.ball_x + 10) < data.player2_x + 15) 
+			&& ((data.ball_y + 10) > data.player2_y && (data.ball_y + 10) < data.player2_y + 70))
+		{
+			if ((data.player2_y - (data.ball_y + 10)) <= 20)
+				return Math.PI * 0,75;
+			if ((data.player2_y - (data.ball_y + 10)) > 20 && (data.player2_y - (data.ball_y + 10)) <= 50)
+				return Math.PI;
+			if ((data.player2_y - (data.ball_y + 10)) > 50)
+				return Math.PI * 1,25;
+		}
+		if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0,25))
+			return Math.PI * 1,75;
+		if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0,75))
+			return Math.PI * 1,25;
+		if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1,75))
+			return Math.PI * 0,25;
+		if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1,25))
+			return Math.PI * 0,75;
+		return null;
 	}
 }
