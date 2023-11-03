@@ -3,6 +3,9 @@ import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from
 import { Server } from 'socket.io';
 import { PrismaService } from "src/prisma/prisma.service";
 import { PrismaClient, Prisma } from '@prisma/client'
+import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
+import { promisify } from 'util';
+import { ConfigService } from '@nestjs/config'
 
 var pos =
 {
@@ -21,12 +24,49 @@ var pos =
 @WebSocketGateway({cors: {origin: '*'}})
 export class MyGateway
 {
-	constructor( private prisma: PrismaService,	) {}
+	iv = randomBytes(16);
+
+	constructor( private prisma: PrismaService,	private config: ConfigService) {}
 	@WebSocketServer()
 	server: Server;
 
 
+	async encryptPassword(textToEncrypt: string) : Promise<Buffer>
+	{
+		if (textToEncrypt == "")
+			return null;
 
+		// The key length is dependent on the algorithm.
+		// In this case for aes256, it is 32 bytes.
+		const key = (await promisify(scrypt)(this.config.get('PASSWORD_FOR_KEY_GEN'), 'salt', 32)) as Buffer;
+
+		const cipher = createCipheriv('aes-256-ctr', key, this.iv);
+
+		const encryptedText = Buffer.concat([
+			cipher.update(textToEncrypt),
+			cipher.final(),
+		]);
+
+		return encryptedText;
+	}
+
+	async decryptPassword(encryptedText: any) : Promise<string>
+	{
+		if (encryptedText == null)
+			return "";
+
+		// The key length is dependent on the algorithm.
+		// In this case for aes256, it is 32 bytes.
+		const key = (await promisify(scrypt)(this.config.get('PASSWORD_FOR_KEY_GEN'), 'salt', 32)) as Buffer;
+
+		const decipher = createDecipheriv('aes-256-ctr', key, this.iv);
+		const decryptedText = Buffer.concat([
+			decipher.update(encryptedText),
+			decipher.final(),
+		]);
+
+		return decryptedText.toString();
+	}
 
 	/*
 	**		___________________     Get Socket at start     ___________________
@@ -224,12 +264,13 @@ export class MyGateway
 						const parts = words[2].split(":");
 						console.log(words[1]);
 						console.log(parts[1]);
+						const encryptedPassword = await this.encryptPassword(parts[1]);
 						const channel8 = await this.prisma.channel.create
 						({
 							data:
 							{
 								Name: words[1],
-								Password: parts[1],
+								Password: encryptedPassword,
 							},
 						});
 					}
@@ -242,7 +283,7 @@ export class MyGateway
 							data:
 							{
 								Name: words[1],
-								Password: "",
+								Password: null,
 							},
 						});
 					}
@@ -319,7 +360,8 @@ export class MyGateway
 					},
 				});
 				console.log("Terreros");
-				if (channel.Password === words[2] || channel.Password === "")
+				const decryptedChannelPassword = await this.decryptPassword(channel.Password);
+				if (decryptedChannelPassword === words[2] || decryptedChannelPassword === "")
 				{
 					console.log("Riera");
 					const joined_channel_table = await this.prisma.joinedChannels.create

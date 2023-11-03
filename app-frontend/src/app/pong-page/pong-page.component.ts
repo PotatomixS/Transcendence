@@ -8,6 +8,7 @@ import { io } from 'socket.io-client';
 })
 export class PongPageComponent implements OnInit
 {
+  matchPlaying: boolean;
 
   @ViewChild("game")  
   private gameCanvas: ElementRef;
@@ -22,6 +23,8 @@ export class PongPageComponent implements OnInit
 
   constructor()
   {
+    this.matchPlaying = false;
+
     this.drawNumbersArray  = [this.draw0.bind(this), this.draw1.bind(this),
        this.draw2.bind(this), this.draw3.bind(this), this.draw4.bind(this),
         this.draw5.bind(this), this.draw6.bind(this), this.draw7.bind(this),
@@ -174,5 +177,11 @@ export class PongPageComponent implements OnInit
     {
       this.socket.emit("movePlayer1", this.keysPressed);
     }
+  }
+
+  findMatch()
+  {
+    //TODO: la idea es meter lo del canvas de la parte superior en una función que lo monte cuando se muestre
+    this.matchPlaying = true;
   }
 }

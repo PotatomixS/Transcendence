@@ -17,3 +17,16 @@ canvas
     color: white;
 }
 
+.menu
+{
+    height: 100%;
+    width: 100%;
+    text-align: center;
+}
+
+.menu button
+{
+    width: 150px;
+    height: 80px;
+    color: black;
+}

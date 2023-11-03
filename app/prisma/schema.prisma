@@ -55,7 +55,7 @@ model JoinedChannels {
 model Channel {
 	id					Int			@id @default(autoincrement())
 	Name				String		@unique
-	Password			String
+	Password			Bytes
 	isPrivate			Boolean		 @default(false)
 }
 
