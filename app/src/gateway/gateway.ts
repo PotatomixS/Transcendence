@@ -1,27 +1,29 @@
 import { OnModuleInit } from '@nestjs/common';
 import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server, Socket} from 'socket.io';
 import { PrismaService } from "src/prisma/prisma.service";
 import { PrismaClient, Prisma } from '@prisma/client'
 import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
 import { ConfigService } from '@nestjs/config'
+import { map } from 'rxjs';
+// import { Socket } from 'dgram';
 
-var pos =
-{
-	player1_x: 15,
-	player1_y: 405,
-	player2_x: 1240,
-	player2_y: 405,
-	player1_p: 0,
-	player2_p: 0,
-	ball_x: 628,
-	ball_y: 430,
-	ball_ang: 0,
-	ball_inc: 0
-}
+// var i = 0;
 
-var keysPressed: { [key: string]: boolean } = {};
+
+// var pos =
+// {
+// 	player1_x: 15, player1_y: 405,
+// 	player2_x: 1240, player2_y: 405,
+// 	player1_p: 0, player2_p: 0,
+// 	ball_x: 628, ball_y: 430,
+// 	ball_ang: 0
+// }
+
+// var keysPressed: { [key: string]: boolean } = {};
+
+var gameRooms: Map<string, gameRoom> = new Map<string, gameRoom>();
 
 @WebSocketGateway({cors: {origin: '*'}})
 export class MyGateway
@@ -31,7 +33,6 @@ export class MyGateway
 	constructor( private prisma: PrismaService,	private config: ConfigService) {}
 	@WebSocketServer()
 	server: Server;
-
 
 	async encryptPassword(textToEncrypt: string) : Promise<Buffer>
 	{
@@ -53,12 +54,13 @@ export class MyGateway
 	}
 
 	async decryptPassword(encryptedText: any) : Promise<string>
-	{
+	{	
 		if (encryptedText == null)
 			return "";
 
 		// The key length is dependent on the algorithm.
 		// In this case for aes256, it is 32 bytes.
+
 		const key = (await promisify(scrypt)(this.config.get('PASSWORD_FOR_KEY_GEN'), 'salt', 32)) as Buffer;
 
 		const decipher = createDecipheriv('aes-256-ctr', key, this.iv);
@@ -70,19 +72,14 @@ export class MyGateway
 		return decryptedText.toString();
 	}
 
+
+
+
 	/*
 	**		___________________     Get Socket at start     ___________________
 	*/
 
-	onModuleInit()
-	{
-		this.server.on('connection', (socket) =>
-		{
-			this.server.to(socket.id).emit('InitSocketId', socket.id);
-			this.gameLoop();
-		})
-	}
- 
+	
 	
 	
 	
@@ -165,6 +162,14 @@ export class MyGateway
 		{
 			this.ft_unblock(body);
 		}
+		else if (words[0] == "/friends")
+		{
+			this.ft_friends(body);
+		}
+		else if (words[0] == "/showprofile")
+		{
+			this.ft_showprofile(body);
+		}
 
 		//              ______     Channels     ______
 
@@ -204,6 +209,10 @@ export class MyGateway
 		{
 			this.ft_giveAdmin(body);
 		}
+		else if (words[0] == "/changePassword")
+		{
+			this.ft_changePassword(body);
+		}
 		else
 		{
 			this.ft_send(body);
@@ -215,9 +224,7 @@ export class MyGateway
 
 
 
-	/*
-	**		_________________________     ft_join     _________________________
-	*/
+
 	
 
 
@@ -417,6 +424,148 @@ export class MyGateway
 
 
 	/*
+	**		_______________________     ft_friends     _______________________
+	*/
+
+	async ft_friends(body: any)
+	{
+		//              ______     buscar tu persona     ______
+
+		const my_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+
+		//              ______  Mostrar tus friends cuando eres 1   ______
+
+		const all_friends_when_I_am_User_1 = await this.prisma.friends.findMany
+		({
+			where:
+			{
+				idUser1: my_user.id,
+			},
+		});
+
+		const all_friends_when_I_am_User_2 = await this.prisma.friends.findMany
+		({
+			where:
+			{
+				idUser2: my_user.id,
+			},
+		});
+		
+		this.server.to(my_user.socketId).emit('onMessage',
+		{
+			user: "",
+			message: "Friends:",
+		});
+
+		for (const each_friend of all_friends_when_I_am_User_1)
+		{
+			const user2 = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					id: each_friend.idUser2,
+				},
+			});
+
+			this.server.to(my_user.socketId).emit('onMessage',
+			{
+				user: "",
+				message: ("-   " + user2.login_42),
+			});
+		}
+
+		for (const each_friend of all_friends_when_I_am_User_2)
+		{
+			const user1 = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					id: each_friend.idUser1,
+				},
+			});
+
+			this.server.to(my_user.socketId).emit('onMessage',
+			{
+				user: "",
+				message: ("-   " + user1.login_42),
+			});
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_______________________     ft_friends     _______________________
+	*/
+
+	async ft_showprofile(body: any)
+	{
+		const words = body.message.split(' ');
+
+		const my_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		this.server.to(my_user.socketId).emit('onMessage',
+		{
+			user: body.userName,
+			message: "Esto nunca se va a enviar",
+			other: 
+				{
+					command: "Friend",
+					friend: words[1]
+				},
+		});
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
 	**		_________________________     ft_join     _________________________
 	*/
 	
@@ -581,7 +730,7 @@ export class MyGateway
 							data:
 							{
 								Name: words[1],
-								Password: null,
+								Password: Buffer.from([])
 							},
 						});
 					}
@@ -1068,7 +1217,8 @@ export class MyGateway
 
 
 		if (JoinedChannels_this_user && JoinedChannels_user_to_kick && 
-			(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_kick.idChannel)
+			(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_kick.idChannel
+			&& this_user.login_42 != to_kick_user.login_42)
 		{
 			const deleteJoinedChannel = await this.prisma.joinedChannels.delete
 			({
@@ -1166,7 +1316,8 @@ export class MyGateway
 				//              ______     Ban     ______
 
 				if (JoinedChannels_this_user && JoinedChannels_user_to_ban && 
-					(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel)
+					(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel
+					&& this_user.login_42 != to_kick_user.login_42)
 				{
 
 
@@ -1288,7 +1439,8 @@ export class MyGateway
 				//              ______     Ban     ______
 
 				if (JoinedChannels_this_user && JoinedChannels_user_to_ban && 
-					(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel)
+					(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel
+					&& this_user.login_42 != to_kick_user.login_42)
 				{
 
 					//              ______     Delete JoinedChannels table      ______
@@ -1409,7 +1561,8 @@ export class MyGateway
 				//              ______     Give Admin     ______
 
 				if (JoinedChannels_this_user && JoinedChannels_to_admin_user && 
-					(this_user.channelRol == "owner") && JoinedChannels_this_user.idChannel == JoinedChannels_to_admin_user.idChannel)
+					(this_user.channelRol == "owner") && JoinedChannels_this_user.idChannel == JoinedChannels_to_admin_user.idChannel
+					&& this_user.login_42 != to_admin_user.login_42)
 				{
 
 					await this.prisma.user.update
@@ -1439,11 +1592,98 @@ export class MyGateway
 						user: "Server",
 						message: "You were made admin by " + this_user.login_42 + ". Congratulations!",
 					});
-
 				}
 			}
 		}
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_________________________     ft_changePassword     _________________________
+	*/
+
+	async ft_changePassword(body: any)
+	{
+		const words = body.message.split(' ');
+
+
+		//              ______     Get users     ______
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+
+		//              ______     Get joinedChannels     ______
+
+		const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: words[1],
+			},
+		});
+
+
+		//              ______     kick     ______
+
+
+		if (JoinedChannels_this_user && (this_user.channelRol == "owner"))
+		{
+
+			//update server pass
+
+			await this.prisma.channel.update
+			({
+				where:
+				{
+					Name: JoinedChannels_this_user.idChannel
+				},
+				data:
+				{
+					//pene
+					// Password: String(p_socketId),
+				},
+			});
+
+			this.server.to(this_user.socketId).emit('onMessage',
+			{
+				user: "Server",
+				message: "You kicked " + words[1],
+			});
+		}
+	}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1595,6 +1835,46 @@ export class MyGateway
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/*
 	**		_________________________     gameChanges     _________________________
 	*/
@@ -1602,116 +1882,281 @@ export class MyGateway
 	@SubscribeMessage('keymapChanges')
 	onKeymapChanges(@MessageBody() key: {key: string, keyStatus: boolean})
 	{
-		if (key.keyStatus == true)
-			keysPressed[key.key] = true;
-		else
-			keysPressed[key.key] = false;
+		// if (key.keyStatus == true)
+		// 	keysPressed[key.key] = true;
+		// else
+		// 	keysPressed[key.key] = false;
+	}
+
+	// async gameLoop()
+	// {
+	// 	let direccion = Math.floor(Math.random() * 1);
+
+	// 	if (direccion)
+	// 		pos.ball_ang = Math.PI;
+	// 	else
+	// 		pos.ball_ang = 0;
+	// 		this.playerMove();
+	// 	setInterval(() => {this.playerMove()}, 4)
+	// 	setInterval(() => {pos.ball_ang = this.hitboxCheck(pos);}, 4)
+	// 	setInterval(() =>
+	// 	{
+	// 		let bounce : number | null;
+	// 		pos.ball_x += Math.cos(pos.ball_ang) * 3;
+	// 		pos.ball_y += Math.sin(pos.ball_ang) * -3;
+			
+	// 		if (pos.ball_x < 0 || pos.ball_x > 1280)
+	// 		{
+	// 			if (pos.ball_x < 0)
+	// 				pos.player1_p += 1;
+	// 			if (pos.ball_x > 1280)
+	// 				pos.player2_p += 1;
+	// 			if (pos.player1_p > 9 || pos.player2_p > 9)
+	// 			{
+	// 				pos.player1_p = 0;
+	// 				pos.player2_p = 0;
+	// 			}
+	// 			let direccion2 = Math.floor(Math.random() * 2);
+
+	// 			if (direccion2 == 1)
+	// 				pos.ball_ang = Math.PI;
+	// 			else
+	// 				pos.ball_ang = 0;
+	// 			pos.ball_x = 628;
+	// 			pos.ball_y = 430;
+	// 			pos.player1_y = 405;
+	// 			pos.player2_y = 405;
+	// 		}
+	// 		this.server.to("theRoom").emit('gameChanges', pos);
+	// 	}, 16);
+	// }
+
+	// hitboxCheck(data: any): number
+	// {
+	// 	if (((data.ball_x + 10) > data.player1_x && (data.ball_x + 10) < data.player1_x + 15) 
+	// 		&& ((data.ball_y + 10) > data.player1_y && (data.ball_y + 10) < data.player1_y + 70))
+	// 	{
+	// 		if (((data.player1_y - (data.ball_y + 10)) * -1) <= 20)
+	// 			return Math.PI * 0.25;
+	// 		if (((data.player1_y - (data.ball_y + 10)) * -1) > 20 && ((data.player1_y - (data.ball_y + 10)) * -1) <= 50)
+	// 			return Math.PI * 2;
+	// 		if (((data.player1_y - (data.ball_y + 10)) * -1) > 50)
+	// 			return Math.PI * 1.75;
+	// 	}
+	// 	if (((data.ball_x + 10) > data.player2_x && (data.ball_x + 10) < data.player2_x + 15) 
+	// 		&& ((data.ball_y + 10) > data.player2_y && (data.ball_y + 10) < data.player2_y + 70))
+	// 	{
+	// 		if (((data.player2_y - (data.ball_y + 10)) * -1) <= 20)
+	// 			return Math.PI * 0.75;
+	// 		if (((data.player2_y - (data.ball_y + 10)) * -1) > 20 && ((data.player2_y - (data.ball_y + 10)) * -1) <= 50)
+	// 			return Math.PI;
+	// 		if (((data.player2_y - (data.ball_y + 10)) * -1) > 50)
+	// 			return Math.PI * 1.25;
+	// 	}
+	// 	if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0.25))
+	// 		return Math.PI * 1.75;
+	// 	else if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0.75))
+	// 		return Math.PI * 1.25;
+	// 	else if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1.75))
+	// 		return Math.PI * 0.25;
+	// 	else if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1.25))
+	// 		return Math.PI * 0.75;
+	// 	return data.ball_ang;
+	// }
+
+	// playerMove()
+	// {
+	// 	if (keysPressed["w"])
+	// 	{
+	// 		pos.player1_y -= 1;
+	// 		if (pos.player1_y < 0)
+	// 			pos.player1_y = 0;
+	// 	}
+	// 	if (keysPressed["s"])
+	// 	{
+	// 		pos.player1_y += 1;
+	// 		if (pos.player1_y > 890)
+	// 			pos.player1_y = 890;
+	// 	}
+	// 	if (keysPressed["ArrowUp"])
+	// 	{
+	// 		pos.player2_y -= 1;
+	// 		if (pos.player2_y < 0)
+	// 			pos.player2_y = 0;
+	// 	}
+	// 	if (keysPressed["ArrowDown"])
+	// 	{
+	// 		pos.player2_y += 1;
+	// 		if (pos.player2_y > 890)
+	// 			pos.player2_y = 890;
+	// 	}
+	// }
+
+
+
+	/*
+	**		___________________     Get Socket at start     ___________________
+	*/
+
+	onModuleInit()
+	{
+		this.server.on('connection', (socket) =>
+		{
+			this.server.to(socket.id).emit('InitSocketId', socket.id);
+
+			socket.join("theRoom");
+			
+			gameRooms["theRoom"] = new gameRoom("theRoom", this.server, socket);
+			if (gameRooms["theRoom"].getStatus() == false)
+			{
+				socket.to("theRoom").emit('onMessage',
+				{
+					user: "USER",
+					message: "Roca",
+				});
+
+				gameRooms["theRoom"].gameLoop();
+			}
+		})
+	}
+}
+
+class gameRoom
+{
+	private pos =
+	{
+		player1_x: 15, player1_y: 405,
+		player2_x: 1240, player2_y: 405,
+		player1_p: 0, player2_p: 0,
+		ball_x: 628, ball_y: 430,
+		ball_ang: 0
+	}
+
+	private keysPressed: { [key: string]: boolean } = {};
+
+	public roomName: string;
+
+	private server: Server;
+
+	private socket: Socket<any>; 
+
+	public gameStatus: boolean;
+
+	constructor (room: string, sv: Server, sk: Socket<any>)
+	{
+		this.roomName = room;
+		this.server = sv;
+		this.socket = sk;
+		this.gameStatus = false;
+	}
+
+	getStatus(): boolean
+	{
+		return this.gameStatus;
 	}
 
 	async gameLoop()
 	{
+		this.gameStatus = true;
 		let direccion = Math.floor(Math.random() * 1);
 
 		if (direccion)
-			pos.ball_ang = Math.PI;
+			this.pos.ball_ang = Math.PI;
 		else
-			pos.ball_ang = 0;
-			this.playerMove();
+			this.pos.ball_ang = 0;
 		setInterval(() => {this.playerMove()}, 4)
-		setInterval(() => {pos.ball_ang = this.hitboxCheck(pos);}, 4)
+		setInterval(() => {this.hitboxCheck()}, 4)
 		setInterval(() =>
 		{
 			let bounce : number | null;
-			pos.ball_x += Math.cos(pos.ball_ang) * 3;
-			pos.ball_y += Math.sin(pos.ball_ang) * -3;
+
+			this.pos.ball_x += Math.cos(this.pos.ball_ang) * 3;
+			this.pos.ball_y += Math.sin(this.pos.ball_ang) * -3;
 			
-			if (pos.ball_x < 0 || pos.ball_x > 1280)
+			if (this.pos.ball_x < 0 || this.pos.ball_x > 1280)
 			{
-				if (pos.ball_x < 0)
-					pos.player1_p += 1;
-				if (pos.ball_x > 1280)
-					pos.player2_p += 1;
-				if (pos.player1_p > 9 || pos.player2_p > 9)
+				if (this.pos.ball_x < 0)
+					this.pos.player1_p += 1;
+				if (this.pos.ball_x > 1280)
+					this.pos.player2_p += 1;
+				if (this.pos.player1_p > 9 || this.pos.player2_p > 9)
 				{
-					pos.player1_p = 0;
-					pos.player2_p = 0;
+					this.pos.player1_p = 0;
+					this.pos.player2_p = 0;
 				}
 				let direccion2 = Math.floor(Math.random() * 2);
 
 				if (direccion2 == 1)
-					pos.ball_ang = Math.PI;
+					this.pos.ball_ang = Math.PI;
 				else
-					pos.ball_ang = 0;
-				pos.ball_x = 628;
-				pos.ball_y = 430;
-				pos.player1_y = 405;
-				pos.player2_y = 405;
+				this.pos.ball_ang = 0;
+				this.pos.ball_x = 628;
+				this.pos.ball_y = 430;
+				this.pos.player1_y = 405;
+				this.pos.player2_y = 405;
 			}
-			if (pos.ball_x < 0 || pos.ball_x > 1275)
-				pos.ball_inc *= -1;
-			this.server.emit('gameChanges', pos);
+			this.socket.to(this.roomName).emit('gameChanges', this.pos);
+
 		}, 16);
 	}
 
-	hitboxCheck(data: any): number
+	hitboxCheck()
 	{
-		if (((data.ball_x + 10) > data.player1_x && (data.ball_x + 10) < data.player1_x + 15) 
-			&& ((data.ball_y + 10) > data.player1_y && (data.ball_y + 10) < data.player1_y + 70))
+		if (((this.pos.ball_x + 10) > this.pos.player1_x && (this.pos.ball_x + 10) < this.pos.player1_x + 15) 
+			&& ((this.pos.ball_y + 10) > this.pos.player1_y && (this.pos.ball_y + 10) < this.pos.player1_y + 70))
 		{
-			if (((data.player1_y - (data.ball_y + 10)) * -1) <= 20)
-				return Math.PI * 0.25;
-			if (((data.player1_y - (data.ball_y + 10)) * -1) > 20 && ((data.player1_y - (data.ball_y + 10)) * -1) <= 50)
-				return Math.PI * 2;
-			if (((data.player1_y - (data.ball_y + 10)) * -1) > 50)
-				return Math.PI * 1.75;
+			if (((this.pos.player1_y - (this.pos.ball_y + 10)) * -1) <= 20)
+				this.pos.ball_ang = Math.PI * 0.25;
+			if (((this.pos.player1_y - (this.pos.ball_y + 10)) * -1) > 20 && ((this.pos.player1_y - (this.pos.ball_y + 10)) * -1) <= 50)
+				this.pos.ball_ang = Math.PI * 2;
+			if (((this.pos.player1_y - (this.pos.ball_y + 10)) * -1) > 50)
+				this.pos.ball_ang = Math.PI * 1.75;
 		}
-		if (((data.ball_x + 10) > data.player2_x && (data.ball_x + 10) < data.player2_x + 15) 
-			&& ((data.ball_y + 10) > data.player2_y && (data.ball_y + 10) < data.player2_y + 70))
+		if (((this.pos.ball_x + 10) > this.pos.player2_x && (this.pos.ball_x + 10) < this.pos.player2_x + 15) 
+			&& ((this.pos.ball_y + 10) > this.pos.player2_y && (this.pos.ball_y + 10) < this.pos.player2_y + 70))
 		{
-			if (((data.player2_y - (data.ball_y + 10)) * -1) <= 20)
-				return Math.PI * 0.75;
-			if (((data.player2_y - (data.ball_y + 10)) * -1) > 20 && ((data.player2_y - (data.ball_y + 10)) * -1) <= 50)
-				return Math.PI;
-			if (((data.player2_y - (data.ball_y + 10)) * -1) > 50)
-				return Math.PI * 1.25;
+			if (((this.pos.player2_y - (this.pos.ball_y + 10)) * -1) <= 20)
+				this.pos.ball_ang = Math.PI * 0.75;
+			if (((this.pos.player2_y - (this.pos.ball_y + 10)) * -1) > 20 && ((this.pos.player2_y - (this.pos.ball_y + 10)) * -1) <= 50)
+				this.pos.ball_ang = Math.PI;
+			if (((this.pos.player2_y - (this.pos.ball_y + 10)) * -1) > 50)
+				this.pos.ball_ang = Math.PI * 1.25;
 		}
-		if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0.25))
-			return Math.PI * 1.75;
-		else if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0.75))
-			return Math.PI * 1.25;
-		else if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1.75))
-			return Math.PI * 0.25;
-		else if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1.25))
-			return Math.PI * 0.75;
-		return data.ball_ang;
+		if ((this.pos.ball_y + 10) < 0 && this.pos.ball_ang == (Math.PI * 0.25))
+			this.pos.ball_ang = Math.PI * 1.75;
+		else if ((this.pos.ball_y + 10) < 0 && this.pos.ball_ang == (Math.PI * 0.75))
+			this.pos.ball_ang = Math.PI * 1.25;
+		else if ((this.pos.ball_y + 10) > 960 && this.pos.ball_ang == (Math.PI * 1.75))
+			this.pos.ball_ang = Math.PI * 0.25;
+		else if ((this.pos.ball_y + 10) > 960 && this.pos.ball_ang == (Math.PI * 1.25))
+			this.pos.ball_ang = Math.PI * 0.75;
 	}
 
 	playerMove()
 	{
-		if (keysPressed["w"])
+		if (this.keysPressed["w"])
 		{
-			pos.player1_y -= 1;
-			if (pos.player1_y < 0)
-				pos.player1_y = 0;
+			this.pos.player1_y -= 1;
+			if (this.pos.player1_y < 0)
+				this.pos.player1_y = 0;
 		}
-		if (keysPressed["s"])
+		if (this.keysPressed["s"])
 		{
-			pos.player1_y += 1;
-			if (pos.player1_y > 890)
-				pos.player1_y = 890;
+			this.pos.player1_y += 1;
+			if (this.pos.player1_y > 890)
+				this.pos.player1_y = 890;
 		}
-		if (keysPressed["ArrowUp"])
+		if (this.keysPressed["ArrowUp"])
 		{
-			pos.player2_y -= 1;
-			if (pos.player2_y < 0)
-				pos.player2_y = 0;
+			this.pos.player2_y -= 1;
+			if (this.pos.player2_y < 0)
+				this.pos.player2_y = 0;
 		}
-		if (keysPressed["ArrowDown"])
+		if (this.keysPressed["ArrowDown"])
 		{
-			pos.player2_y += 1;
-			if (pos.player2_y > 890)
-				pos.player2_y = 890;
+			this.pos.player2_y += 1;
+			if (this.pos.player2_y > 890)
+				this.pos.player2_y = 890;
 		}
-		this.server.emit('gameChanges', pos);
 	}
 }

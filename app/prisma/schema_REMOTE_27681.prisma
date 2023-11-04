@@ -29,7 +29,6 @@ model User {
 	wins			matches[]	@relation("wins")
 	loses			matches[]	@relation("loses")
 
-
 	friend1			Friends[]	@relation("friend1")
 	friend2			Friends[]	@relation("friend2")
 
