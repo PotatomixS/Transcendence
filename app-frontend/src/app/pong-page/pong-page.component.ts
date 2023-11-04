@@ -57,6 +57,22 @@ export class PongPageComponent implements OnInit
     this.canvasElement = document.getElementById("cv");
     this.context = this.gameCanvas.nativeElement.getContext("2d");
     this.context.fillStyle = "white";
+    this.socket.on("gameChanges", (data: any) =>
+    {
+      this.context.clearRect
+      (
+        0,
+        0,
+        this.gameCanvas.nativeElement.width,
+        this.gameCanvas.nativeElement.height
+      );
+      this.context.fillRect(data.player1_x, data.player1_y, 15, 70);
+      this.context.fillRect(data.player2_x, data.player2_y, 15, 70);
+      this.context.fillRect(data.ball_x, data.ball_y, 20, 20)
+      for(var i = 0; i < 960; i += 24)
+        this.context.fillRect(635, i, 5, 10);
+      this.drawPoints(data.player1_p, data.player2_p);
+    })
   }
 
   startMatch(id: number = 0)
@@ -205,18 +221,18 @@ export class PongPageComponent implements OnInit
   async onKeyDown(key: KeyboardEvent)
   {  
     if (key.key == "ArrowUp" || key.key == "ArrowDown")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: true});
+      this.socket.to("theRoom").emit("keymapChanges", {key: key.key, keyStatus: true});
     if (key.key == "w" || key.key == "s")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: true});
+      this.socket.to("theRoom").emit("keymapChanges", {key: key.key, keyStatus: true});
   }
 
   @HostListener('document:keyup', ['$event'])
   async onKeyUp(key: KeyboardEvent)
   {
     if (key.key == "ArrowUp" || key.key == "ArrowDown")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: false});
+      this.socket.to("theRoom").emit("keymapChanges", {key: key.key, keyStatus: false});
     if (key.key == "w" || key.key == "s")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: false});
+      this.socket.to("theRoom").emit("keymapChanges", {key: key.key, keyStatus: false});
   }
 
   findMatch()
