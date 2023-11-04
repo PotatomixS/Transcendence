@@ -47,6 +47,21 @@ export class UserController {
         return this.userService.getProfileMatches(str);
     }
 
+    @Post('profileInfoChallenges')
+    getProfileInfoChallenges(@Body() str) {
+        return this.userService.getProfileChallenges(str);
+    }
+
+    @Post('findMatch')
+    findMatch(@Body() str) {
+        return this.userService.findMatch(str);
+    }
+
+    @Post('acceptChallenge')
+    acceptChallenge(@Body() str) {
+        return this.userService.acceptChallenge(str);
+    }
+
     @Post('setProfileInfo')
     setProfileInfo(@Body() str) {
         return this.userService.setProfileInfo(str);

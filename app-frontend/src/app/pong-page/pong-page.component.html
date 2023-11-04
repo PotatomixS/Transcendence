@@ -1,5 +1,11 @@
-<div class="menu" *ngIf="!matchPlaying">
-    <button type="button" (click)="findMatch()">Find match</button>
-</div>
+<div class="main">
+    <div class="menu" *ngIf="!matchPlaying && !searching">
+        <button type="button" (click)="startMatch()" class="findMatchButton"><b>Find match</b></button>
+        <button type="button" *ngFor="let challenge of challenges" (click)="startMatch(challenge.id)" class="challengeButton"><b>Challenge from: {{ challenge.playerLeft.login_42 }}</b></button>
+    </div>
+    <div class="menu" *ngIf="searching">
+        <h1>Searching...</h1>
+    </div>
 
-<canvas #game height="960" width="1280" style="border:1px solid white;" id="cv" *ngIf="matchPlaying"></canvas>
+    <canvas #game height="960" width="1280" style="border:1px solid white;" id="cv"></canvas>
+</div>

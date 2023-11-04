@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
@@ -91,6 +91,33 @@ export class ProfileService {
     };
 
     return this.http.post<any[]>('api/users/profileInfoMatches', params);
+  }
+
+  getChallenges(login_42: string) : Observable<any[]>{
+    const params = {
+      login_42: login_42
+    };
+
+    return this.http.post<any[]>('api/users/profileInfoChallenges', params);
+  }
+
+  findMatch() : Observable<any>
+  {
+    const params = {
+      login_42: this.profile.getValue().login_42
+    };
+
+    return this.http.post<any>('api/users/findMatch', params);
+  }
+
+  acceptChallenge(challenge_id: number) : Observable<any>
+  {
+    const params = {
+      login_42: this.profile.getValue().login_42,
+      room_id: challenge_id
+    };
+
+    return this.http.post<any>('api/users/acceptChallenge', params);
   }
 
   getProfileImage(image: string): Observable<Blob> {
