@@ -8,6 +8,7 @@ import { io } from 'socket.io-client';
 })
 export class PongPageComponent implements OnInit
 {
+  matchPlaying: boolean;
 
   @ViewChild("game")  
   private gameCanvas: ElementRef;
@@ -17,16 +18,17 @@ export class PongPageComponent implements OnInit
   private context: any;
   private drawNumbersArray: ((x: number, y: number) => void)[];
   private socket : any;
-  private keysPressed: { [key: string]: boolean } = {};
 
 
   constructor()
   {
+    this.matchPlaying = true;
+
     this.drawNumbersArray  = [this.draw0.bind(this), this.draw1.bind(this),
        this.draw2.bind(this), this.draw3.bind(this), this.draw4.bind(this),
         this.draw5.bind(this), this.draw6.bind(this), this.draw7.bind(this),
         this.draw8.bind(this), this.draw9.bind(this)];
-        this.socket = io("http://localhost:3000");
+        this.socket = io("http://" + window.location.host + ":3000");
       }
       
       ngOnInit()
@@ -66,11 +68,11 @@ export class PongPageComponent implements OnInit
       
     }
     if (points2 < 10)
-    this.drawNumbersArray[points2](960, 40);
-  else if (points2 >= 10)
-  {
+      this.drawNumbersArray[points2](960, 40);
+    else if (points2 >= 10)
+    {
 
-  }
+    }
   }
   
   draw0(x: number, y: number)
@@ -153,26 +155,24 @@ export class PongPageComponent implements OnInit
   @HostListener('document:keydown', ['$event'])
   async onKeyDown(key: KeyboardEvent)
   {  
-    this.keysPressed[key.key] = true;
-    this.handleKeyEvents();
+    if (key.key == "ArrowUp" || key.key == "ArrowDown")
+      this.socket.emit("keymapChanges", {key: key.key, keyStatus: true});
+    if (key.key == "w" || key.key == "s")
+      this.socket.emit("keymapChanges", {key: key.key, keyStatus: true});
   }
 
   @HostListener('document:keyup', ['$event'])
   async onKeyUp(key: KeyboardEvent)
   {
-    this.keysPressed[key.key] = false;
-    this.handleKeyEvents();
+    if (key.key == "ArrowUp" || key.key == "ArrowDown")
+      this.socket.emit("keymapChanges", {key: key.key, keyStatus: false});
+    if (key.key == "w" || key.key == "s")
+      this.socket.emit("keymapChanges", {key: key.key, keyStatus: false});
   }
 
-  handleKeyEvents()
+  findMatch()
   {
-    if (this.keysPressed["ArrowUp"] || this.keysPressed["ArrowDown"])
-    {
-      this.socket.emit("movePlayer2", this.keysPressed);
-    }
-    if (this.keysPressed["w"] || this.keysPressed["s"])
-    {
-      this.socket.emit("movePlayer1", this.keysPressed);
-    }
+    //TODO: la idea es meter lo del canvas de la parte superior en una función que lo monte cuando se muestre
+    this.matchPlaying = true;
   }
 }

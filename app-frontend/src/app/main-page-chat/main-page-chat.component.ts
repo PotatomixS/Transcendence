@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormGroup, FormControl } from '@angular/forms';
 import { Observable } from 'rxjs';
+import { Router } from '@angular/router'
 import { ChatService } from '../services/chat-service/chat.service';
 
 @Component({
@@ -16,7 +17,7 @@ export class MainPageChatComponent
 	ChatFinder = new FormControl('');
 	MessageBox = new FormControl('');
 	
-	constructor(private chatService: ChatService)
+	constructor(private chatService: ChatService, private route: Router)
 	{
 		
 	}
@@ -25,7 +26,19 @@ export class MainPageChatComponent
 	{
 		this.chatService.getMessages().subscribe((value) =>
 		{
-			this.messages.push(value.user + ": " + value.message);
+			if (value.other?.command)
+			{
+				switch(value.other.command)
+				{
+					case "Friend":
+						this.route.navigate(['/otherprofile', value.other.friend]);
+						break;
+				}
+			}
+			else
+			{
+				this.messages.push(value.user + ": " + value.message);
+			}
 		});
 	}
 	

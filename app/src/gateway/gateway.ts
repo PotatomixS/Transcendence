@@ -3,6 +3,9 @@ import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from
 import { Server } from 'socket.io';
 import { PrismaService } from "src/prisma/prisma.service";
 import { PrismaClient, Prisma } from '@prisma/client'
+import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
+import { promisify } from 'util';
+import { ConfigService } from '@nestjs/config'
 
 var pos =
 {
@@ -18,15 +21,54 @@ var pos =
 	ball_inc: 0
 }
 
+var keysPressed: { [key: string]: boolean } = {};
+
 @WebSocketGateway({cors: {origin: '*'}})
 export class MyGateway
 {
-	constructor( private prisma: PrismaService,	) {}
+	iv = randomBytes(16);
+
+	constructor( private prisma: PrismaService,	private config: ConfigService) {}
 	@WebSocketServer()
 	server: Server;
 
 
+	async encryptPassword(textToEncrypt: string) : Promise<Buffer>
+	{
+		if (textToEncrypt == "")
+			return null;
 
+		// The key length is dependent on the algorithm.
+		// In this case for aes256, it is 32 bytes.
+		const key = (await promisify(scrypt)(this.config.get('PASSWORD_FOR_KEY_GEN'), 'salt', 32)) as Buffer;
+
+		const cipher = createCipheriv('aes-256-ctr', key, this.iv);
+
+		const encryptedText = Buffer.concat([
+			cipher.update(textToEncrypt),
+			cipher.final(),
+		]);
+
+		return encryptedText;
+	}
+
+	async decryptPassword(encryptedText: any) : Promise<string>
+	{
+		if (encryptedText == null)
+			return "";
+
+		// The key length is dependent on the algorithm.
+		// In this case for aes256, it is 32 bytes.
+		const key = (await promisify(scrypt)(this.config.get('PASSWORD_FOR_KEY_GEN'), 'salt', 32)) as Buffer;
+
+		const decipher = createDecipheriv('aes-256-ctr', key, this.iv);
+		const decryptedText = Buffer.concat([
+			decipher.update(encryptedText),
+			decipher.final(),
+		]);
+
+		return decryptedText.toString();
+	}
 
 	/*
 	**		___________________     Get Socket at start     ___________________
@@ -37,7 +79,7 @@ export class MyGateway
 		this.server.on('connection', (socket) =>
 		{
 			this.server.to(socket.id).emit('InitSocketId', socket.id);
-			this.ballLoop();
+			this.gameLoop();
 		})
 	}
  
@@ -173,6 +215,10 @@ export class MyGateway
 
 
 
+	/*
+	**		_________________________     ft_join     _________________________
+	*/
+	
 
 
 
@@ -516,12 +562,13 @@ export class MyGateway
 						const parts = words[2].split(":");
 						
 						console.log(parts[1]);
+						const encryptedPassword = await this.encryptPassword(parts[1]);
 						const channel8 = await this.prisma.channel.create
 						({
 							data:
 							{
 								Name: words[1],
-								Password: parts[1],
+								Password: encryptedPassword,
 							},
 						});
 					}
@@ -534,7 +581,7 @@ export class MyGateway
 							data:
 							{
 								Name: words[1],
-								Password: "",
+								Password: null,
 							},
 						});
 					}
@@ -660,8 +707,8 @@ export class MyGateway
 				});
 
 				console.log("Terreros");
-
-				if (channel.Password === words[2] || channel.Password == "")
+				const decryptedChannelPassword = await this.decryptPassword(channel.Password);
+				if (decryptedChannelPassword === words[2] || decryptedChannelPassword === "")
 				{
 					console.log("Riera");
 					const joined_channel_table = await this.prisma.joinedChannels.create
@@ -1552,94 +1599,119 @@ export class MyGateway
 	**		_________________________     gameChanges     _________________________
 	*/
 
-	@SubscribeMessage('movePlayer1')
-	onMovePlayer1(@MessageBody() key: { [key: string]: boolean })
+	@SubscribeMessage('keymapChanges')
+	onKeymapChanges(@MessageBody() key: {key: string, keyStatus: boolean})
 	{
-		if (key["w"])
-		{
-			pos.player1_y -= 25;
-			if (pos.player1_y < 0)
-				pos.player1_y = 0;
-		}
-		if (key["s"])
-		{
-			pos.player1_y += 25;
-			if (pos.player1_y > 890)
-				pos.player1_y = 890;
-		}
-		this.server.emit('gameChanges', pos);
+		if (key.keyStatus == true)
+			keysPressed[key.key] = true;
+		else
+			keysPressed[key.key] = false;
 	}
 
-	@SubscribeMessage('movePlayer2')
-	onMovePlayer2(@MessageBody() key: { [key: string]: boolean })
+	async gameLoop()
 	{
-		if (key["ArrowUp"])
-		{
-			pos.player2_y -= 25;
-			if (pos.player2_y < 0)
-				pos.player2_y = 0;
-		}
-		if (key["ArrowDown"])
-		{
-			pos.player2_y += 25;
-			if (pos.player2_y > 890)
-				pos.player2_y = 890;
-		}
-		this.server.emit('gameChanges', pos);
-	}
-
-
-	async ballLoop()
-	{
-		let direccion = Math.random();
+		let direccion = Math.floor(Math.random() * 1);
 
 		if (direccion)
-			pos.ball_inc = 5;
+			pos.ball_ang = Math.PI;
 		else
-			pos.ball_inc = -5;
+			pos.ball_ang = 0;
+			this.playerMove();
+		setInterval(() => {this.playerMove()}, 4)
+		setInterval(() => {pos.ball_ang = this.hitboxCheck(pos);}, 4)
 		setInterval(() =>
 		{
 			let bounce : number | null;
-			pos.ball_x += pos.ball_inc;
-			bounce = this.hitboxCheck(pos);
-			if (bounce)
-				pos.ball_ang = bounce;
+			pos.ball_x += Math.cos(pos.ball_ang) * 3;
+			pos.ball_y += Math.sin(pos.ball_ang) * -3;
+			
+			if (pos.ball_x < 0 || pos.ball_x > 1280)
+			{
+				if (pos.ball_x < 0)
+					pos.player1_p += 1;
+				if (pos.ball_x > 1280)
+					pos.player2_p += 1;
+				if (pos.player1_p > 9 || pos.player2_p > 9)
+				{
+					pos.player1_p = 0;
+					pos.player2_p = 0;
+				}
+				let direccion2 = Math.floor(Math.random() * 2);
+
+				if (direccion2 == 1)
+					pos.ball_ang = Math.PI;
+				else
+					pos.ball_ang = 0;
+				pos.ball_x = 628;
+				pos.ball_y = 430;
+				pos.player1_y = 405;
+				pos.player2_y = 405;
+			}
 			if (pos.ball_x < 0 || pos.ball_x > 1275)
 				pos.ball_inc *= -1;
 			this.server.emit('gameChanges', pos);
 		}, 16);
 	}
 
-	hitboxCheck(data: any): number | null
+	hitboxCheck(data: any): number
 	{
 		if (((data.ball_x + 10) > data.player1_x && (data.ball_x + 10) < data.player1_x + 15) 
 			&& ((data.ball_y + 10) > data.player1_y && (data.ball_y + 10) < data.player1_y + 70))
 		{
-			if ((data.player1_y - (data.ball_y + 10)) <= 20)
+			if (((data.player1_y - (data.ball_y + 10)) * -1) <= 20)
 				return Math.PI * 0.25;
-			if ((data.player1_y - (data.ball_y + 10)) > 20 && (data.player1_y - (data.ball_y + 10)) <= 50)
-				return 0;
-			if ((data.player1_y - (data.ball_y + 10)) > 50)
-				return Math.PI * 1,75;
+			if (((data.player1_y - (data.ball_y + 10)) * -1) > 20 && ((data.player1_y - (data.ball_y + 10)) * -1) <= 50)
+				return Math.PI * 2;
+			if (((data.player1_y - (data.ball_y + 10)) * -1) > 50)
+				return Math.PI * 1.75;
 		}
 		if (((data.ball_x + 10) > data.player2_x && (data.ball_x + 10) < data.player2_x + 15) 
 			&& ((data.ball_y + 10) > data.player2_y && (data.ball_y + 10) < data.player2_y + 70))
 		{
-			if ((data.player2_y - (data.ball_y + 10)) <= 20)
-				return Math.PI * 0,75;
-			if ((data.player2_y - (data.ball_y + 10)) > 20 && (data.player2_y - (data.ball_y + 10)) <= 50)
+			if (((data.player2_y - (data.ball_y + 10)) * -1) <= 20)
+				return Math.PI * 0.75;
+			if (((data.player2_y - (data.ball_y + 10)) * -1) > 20 && ((data.player2_y - (data.ball_y + 10)) * -1) <= 50)
 				return Math.PI;
-			if ((data.player2_y - (data.ball_y + 10)) > 50)
-				return Math.PI * 1,25;
+			if (((data.player2_y - (data.ball_y + 10)) * -1) > 50)
+				return Math.PI * 1.25;
 		}
-		if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0,25))
-			return Math.PI * 1,75;
-		if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0,75))
-			return Math.PI * 1,25;
-		if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1,75))
-			return Math.PI * 0,25;
-		if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1,25))
-			return Math.PI * 0,75;
-		return null;
+		if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0.25))
+			return Math.PI * 1.75;
+		else if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0.75))
+			return Math.PI * 1.25;
+		else if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1.75))
+			return Math.PI * 0.25;
+		else if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1.25))
+			return Math.PI * 0.75;
+		return data.ball_ang;
+	}
+
+	playerMove()
+	{
+		if (keysPressed["w"])
+		{
+			pos.player1_y -= 1;
+			if (pos.player1_y < 0)
+				pos.player1_y = 0;
+		}
+		if (keysPressed["s"])
+		{
+			pos.player1_y += 1;
+			if (pos.player1_y > 890)
+				pos.player1_y = 890;
+		}
+		if (keysPressed["ArrowUp"])
+		{
+			pos.player2_y -= 1;
+			if (pos.player2_y < 0)
+				pos.player2_y = 0;
+		}
+		if (keysPressed["ArrowDown"])
+		{
+			pos.player2_y += 1;
+			if (pos.player2_y > 890)
+				pos.player2_y = 890;
+		}
+		this.server.emit('gameChanges', pos);
 	}
 }
