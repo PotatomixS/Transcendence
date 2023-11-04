@@ -10,7 +10,7 @@ import { Observable } from 'rxjs';
 })
 export class PongPageComponent implements OnInit
 {
-  searching: boolean;
+  waiting: boolean;
   matchPlaying: boolean;
 
   match: any;
@@ -32,7 +32,7 @@ export class PongPageComponent implements OnInit
 
   constructor(private profileService: ProfileService)
   {
-    this.searching = false;
+    this.waiting = false;
     this.matchPlaying = false;
 
     this.drawNumbersArray  = [this.draw0.bind(this), this.draw1.bind(this),
@@ -46,7 +46,23 @@ export class PongPageComponent implements OnInit
   {
     this.profile.subscribe(res => {
       this.login_42 = res.login_42;
-      this.profileService.getChallenges(res.login_42).subscribe(challenges => {
+      this.profileService.getOnMatch().subscribe(res => {
+        this.match = res;
+
+        if (res?.response)
+          return;
+        else
+        {
+          if (res?.waiting == true)
+            this.waiting = true;
+          else
+          {
+            this.matchPlaying = true;
+            this.loadMatch();
+          }
+        }
+      });
+      this.profileService.getChallenges().subscribe(challenges => {
         this.challenges = challenges;
       });
     })
@@ -59,6 +75,14 @@ export class PongPageComponent implements OnInit
     this.context.fillStyle = "white";
   }
 
+  cancelFind()
+  {
+    this.profileService.cancelFind(this.match?.id).subscribe(res => {
+      this.matchPlaying = false;
+      this.waiting = false;
+    });
+  }
+
   startMatch(id: number = 0)
   {
     //si es 0 buscar match
@@ -69,7 +93,7 @@ export class PongPageComponent implements OnInit
         this.match = res;
         
         if (res?.findingMatch == true)
-          this.searching = true;
+          this.waiting = true;
         else
         {
           this.matchPlaying = true;

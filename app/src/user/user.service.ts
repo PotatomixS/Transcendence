@@ -218,6 +218,40 @@ export class UserService
 		return matches;
 	}
 
+	async getCurrentMatch(str)
+	{
+		const user = await this.prisma.user.findUnique
+		({
+			where: 
+			{
+				login_42: str.login_42
+			},
+		});
+
+		const matches = await this.prisma.gameRooms.findMany
+		({
+			where: {
+				idPlayerLeft: user.id
+			}
+		});
+
+		if (matches.length > 0)
+			return matches[0];
+
+		const matches2 = await this.prisma.gameRooms.findMany
+		({
+			where: {
+				idPlayerRight: user.id,
+				waiting: false
+			}
+		});
+
+		if (matches2.length > 0)
+			return matches2[0];
+
+		return {response: "no matches"};
+	}
+
 	// _____    G E T	P R O F I L E	C H A L L E N G E S    ______
 	async getProfileChallenges(str)
 	{
@@ -251,6 +285,20 @@ export class UserService
 		return challenges;
 	}
 
+	// _____    C A N C E L		F I N D    ______
+	async cancelFind(str)
+	{
+		var del = await this.prisma.gameRooms.delete
+		({
+			where: 
+			{
+				id: str.id
+			},
+		});
+
+		return {}
+	}
+	
 	// _____    F I N D		M A T C H    ______
 	async findMatch(str)
 	{

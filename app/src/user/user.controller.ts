@@ -47,9 +47,19 @@ export class UserController {
         return this.userService.getProfileMatches(str);
     }
 
+    @Post('getCurrentMatch')
+    getCurrentMatch(@Body() str) {
+        return this.userService.getCurrentMatch(str);
+    }
+
     @Post('profileInfoChallenges')
     getProfileInfoChallenges(@Body() str) {
         return this.userService.getProfileChallenges(str);
+    }
+
+    @Post('cancelFind')
+    cancelFind(@Body() str) {
+        return this.userService.cancelFind(str);
     }
 
     @Post('findMatch')

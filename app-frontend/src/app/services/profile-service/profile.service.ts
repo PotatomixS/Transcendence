@@ -92,13 +92,28 @@ export class ProfileService {
 
     return this.http.post<any[]>('api/users/profileInfoMatches', params);
   }
-
-  getChallenges(login_42: string) : Observable<any[]>{
+  getOnMatch() : Observable<any>{
     const params = {
-      login_42: login_42
+      login_42: this.profile.getValue().login_42,
+    };
+
+    return this.http.post<any>('api/users/getCurrentMatch', params);
+  }
+
+  getChallenges() : Observable<any[]>{
+    const params = {
+      login_42: this.profile.getValue().login_42,
     };
 
     return this.http.post<any[]>('api/users/profileInfoChallenges', params);
+  }
+
+  cancelFind(id: number) : Observable<any[]>{
+    const params = {
+      id
+    };
+
+    return this.http.post<any[]>('api/users/cancelFind', params);
   }
 
   findMatch() : Observable<any>
