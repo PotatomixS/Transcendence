@@ -11,15 +11,15 @@
     <div class="logo">
         <img src="../../assets/42_Logo.png">
     </div>
-    <div *ngIf="this.ft_2FA()" class="login-button">
-        <button class="42login-btn" onclick="window.location.href='https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-5e8f32562427f9c449ce50ffca3a6f29bae38a94655ea0187a79435bbcf03307&redirect_uri=http%3A%2F%2Flocalhost%2Fpong&response_type=code';">Sign up with 42 account</button>
+    <div *ngIf="!ShowFA" class="login-button">
+        <button class="42login-btn" (click)="redirect()">Sign up with 42 account</button>
     </div>
-    <form *ngIf="!this.ft_2FA()" class="code-form" [formGroup]="CodeForm" (ngSubmit)="onSubmit()" >
-        <input type="tel" name="pincode-1" maxlength="1" pattern="[\d]*" tabindex="1" placeholder="" autocomplete="off" formControlName="Code1">
-        <input type="tel" name="pincode-2" maxlength="1" pattern="[\d]*" tabindex="2" placeholder="" autocomplete="off" formControlName="Code2">
-        <input type="tel" name="pincode-3" maxlength="1" pattern="[\d]*" tabindex="3" placeholder="" autocomplete="off" formControlName="Code3">
-        <input type="tel" name="pincode-4" maxlength="1" pattern="[\d]*" tabindex="4" placeholder="" autocomplete="off" formControlName="Code4">
-        <input type="tel" name="pincode-5" maxlength="1" pattern="[\d]*" tabindex="5" placeholder="" autocomplete="off" formControlName="Code5">
-        <input type="tel" name="pincode-6" maxlength="1" pattern="[\d]*" tabindex="6" placeholder="" autocomplete="off" formControlName="Code6">
+    <form *ngIf="ShowFA" class="code-form" [formGroup]="CodeForm" (paste)="onPaste($event)" (input)="onInput($event)" (keydown)="onKeyDown($event)">
+        <input type="tel" id="code1" maxlength="1" pattern="[\d]*" tabindex="1" placeholder="" autocomplete="off" formControlName="Code1" >
+        <input type="tel" id="code2" maxlength="1" pattern="[\d]*" tabindex="2" placeholder="" autocomplete="off" formControlName="Code2" >
+        <input type="tel" id="code3" maxlength="1" pattern="[\d]*" tabindex="3" placeholder="" autocomplete="off" formControlName="Code3" >
+        <input type="tel" id="code4" maxlength="1" pattern="[\d]*" tabindex="4" placeholder="" autocomplete="off" formControlName="Code4" >
+        <input type="tel" id="code5" maxlength="1" pattern="[\d]*" tabindex="5" placeholder="" autocomplete="off" formControlName="Code5" >
+        <input type="tel" id="code6" maxlength="1" pattern="[\d]*" tabindex="6" placeholder="" autocomplete="off" formControlName="Code6" >
     </form>
 </div>

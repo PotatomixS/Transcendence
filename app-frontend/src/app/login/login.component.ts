@@ -1,6 +1,8 @@
-import { Component, Input, SimpleChange, SimpleChanges } from '@angular/core';
-import { SharedService } from '../shared.service';
+import { Component, ElementRef, Input, SimpleChange, SimpleChanges } from '@angular/core';
 import { FormGroup, FormControl } from '@angular/forms';
+import { AuthService } from '../services/auth-service/auth.service';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { ProfileService } from '../services/profile-service/profile.service';
 
 @Component({
   selector: 'app-login',
@@ -10,6 +12,9 @@ import { FormGroup, FormControl } from '@angular/forms';
 
 export class LoginComponent
 {
+  ShowFA: boolean;
+  faActive: Observable<boolean>;
+
   CodeForm = new FormGroup({
     Code1: new FormControl(''),
     Code2: new FormControl(''),
@@ -18,34 +23,117 @@ export class LoginComponent
     Code5: new FormControl(''),
     Code6: new FormControl('')
   });
-
   
-  constructor(public ss: SharedService)
+  constructor(public authService: AuthService, public profileService: ProfileService)
   {
-
+    this.ShowFA = false;
+    this.faActive = this.authService.faActive;
   }
 
-  ft_2FA(): boolean
+  private getQueryParameter(): string {
+		const parameters = new URLSearchParams(window.location.search);
+		return String(parameters.get("code"));
+	}
+
+  ngOnInit()
   {
-    //cuando le doy al boton me comprueba que tengo token y que el usuario
-    //tiene activada la 2FA y si se cumplen las dos cosas cambia LoginButton
-    //a false y AuthCodeForm a true
-    return false;
+    this.faActive.subscribe(values => 
+    {
+      this.ShowFA = values;
+    });
+    
+    this.CodeForm.valueChanges.subscribe(values =>
+    {
+      this.onSubmit(values);
+    });
   }
 
-  ngOnInit(changes: SimpleChanges)
+  redirect()
   {
-    this.onSubmit();
+    this.authService.get42URL().subscribe(res => {
+      window.location.href = res?.url;
+    });
   }
   
-  onSubmit()
+  onSubmit(values: any)
   {
-      console.log((this.CodeForm.value).Code1);
-      if (this.CodeForm.value.Code1 && this.CodeForm.value.Code2 &&
-        this.CodeForm.value.Code3 && this.CodeForm.value.Code4 &&
-        this.CodeForm.value.Code5 && this.CodeForm.value.Code6)
+    const Code: string = values.Code1 + values.Code2 + values.Code3 + values.Code4 + values.Code5 + values.Code6;
+    if (values.Code1 && values.Code2 &&
+      values.Code3 && values.Code4 &&
+      values.Code5 && values.Code6)
       {
-
+        document.getElementById("code1")?.blur(); 
+        this.CodeForm.reset();
+        this.authService.checkCode(this.profileService.profile.getValue().login_42, Code).subscribe(res =>
+        {
+          if (res?.response)
+          {
+            //ok
+            this.profileService.profile.next(res);
+            this.authService.setToken(res.access_token);
+            this.authService.logged.next(true);
+          }
+        });
+        console.log(Code);
       }
+  }
+
+  onKeyDown(key: KeyboardEvent)
+  {
+    var values_list: Array<string | null | undefined>;
+    var id_list: Array<string>;
+  
+    values_list = [this.CodeForm.value.Code1, this.CodeForm.value.Code2,
+                   this.CodeForm.value.Code3, this.CodeForm.value.Code4,
+                   this.CodeForm.value.Code5, this.CodeForm.value.Code6];
+    id_list = ["code1", "code2", "code3",
+               "code4", "code5", "code6"];
+    if (key.key != "Backspace")
+      return;
+    for(var it = 0; it < 6; it++)
+    {
+      if (!values_list[it])
+      {
+        document.getElementById(id_list[it - 1])?.focus();
+        return;
+      }
+    }
+  }
+  
+  onInput(Input: InputEventInit)
+  {
+    requestAnimationFrame(() =>
+    {
+      var values_list: Array<string | null | undefined>;
+      var id_list: Array<string>;
+    
+      values_list = [this.CodeForm.value.Code1, this.CodeForm.value.Code2,
+                     this.CodeForm.value.Code3, this.CodeForm.value.Code4,
+                     this.CodeForm.value.Code5, this.CodeForm.value.Code6];
+      id_list = ["code1", "code2", "code3",
+                 "code4", "code5", "code6"];
+      for(var it = 0; it < 6; it++)
+      {
+        if (!values_list[it])
+        {
+          document.getElementById(id_list[it])?.focus();
+          return;
+        }
+      }
+      document.getElementById(id_list[5])?.focus();
+    })
+  }
+
+  onPaste(paste: ClipboardEvent)
+  {
+    const Code: String = String(paste.clipboardData?.getData('text'));
+    this.CodeForm.setValue({
+      Code1: Code[0],
+      Code2: Code[1],
+      Code3: Code[2],
+      Code4: Code[3],
+      Code5: Code[4],
+      Code6: Code[5],
+    });
   }
 }

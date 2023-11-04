@@ -3,7 +3,6 @@ import { PrismaClient, Prisma } from '@prisma/client'
 import { ForbiddenException } from '@nestjs/common';
 import { Injectable, Post } from "@nestjs/common";
 import { AuthDto } from './dto';
-import * as argon from 'argon2';
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from '@nestjs/config'
 import axios from 'axios';
@@ -12,19 +11,6 @@ import axios from 'axios';
 // Send Emails
 
 import * as nodemailer from 'nodemailer';
-
-
-const clientId = "u-s4t2ud-5e8f32562427f9c449ce50ffca3a6f29bae38a94655ea0187a79435bbcf03307";
-const redirectUri = "http://localhost/pong";
-const clientSecret = "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";
-const code2 = "0888ae267f7cbcfdba94cf0d5546476bcb97e45fcbf24bc14e25d06237b4de25";
-const grantType = "authorization_code";
-
-
-
-
-
-
 
 
 
@@ -36,6 +22,10 @@ const grantType = "authorization_code";
 @Injectable({})
 export class AuthService
 {
+	clientId = this.config.get('CLIENT_UID');
+	clientSecret = this.config.get('CLIENT_SECRET');
+	redirectUri = this.config.get('REDIRECT_URI');
+	grantType = "authorization_code";
 
 	constructor(
 		private prisma: PrismaService,
@@ -44,7 +34,12 @@ export class AuthService
 	) {}
 
 
-
+	async get42URL()
+	{
+		return {
+			url: 'https://api.intra.42.fr/oauth/authorize?client_id=' + this.clientId + '&redirect_uri=' + encodeURI(this.redirectUri) + '&response_type=code'
+		}
+	}
 
 	// _____    S I G N     U P     ______
 	
@@ -53,6 +48,11 @@ export class AuthService
 		//	Look for user in db
 
 		const all_info = await this.get_user(str);
+		if (!all_info)
+		{
+			return {error: "Code error."};
+		}
+
 		const user_gotten = all_info.data.login;
 		const email_gotten = all_info.data.email;
 
@@ -73,7 +73,7 @@ export class AuthService
 		{
 			try
 			{
-				const user = await this.prisma.user.create
+				const newUser = await this.prisma.user.create
 				({
 					data:
 					{
@@ -81,13 +81,17 @@ export class AuthService
 						login_42: user_gotten,
 						nickname: user_gotten,
 						email_42: email_gotten,		//CHAGNE
+						socketId: ""
 					},
 				});
 
 				return {
-					nickname: user.nickname,
-					email: user.email_42,
-					img_str: user.img_str
+					login_42: newUser.login_42,
+					nickname: newUser.nickname,
+					email: newUser.email_42,
+					img_str: newUser.img_str,
+					wins: 0,
+					loses: 0
 				};
  
 			}
@@ -104,46 +108,140 @@ export class AuthService
 			}
 		}
 
-
-		//	Return User
-
 		if (user.auth2FA == true)
 		{
+			//sign fallado por 2FA activo
 			user.code2FA = await this.sendEmail(email_gotten);
-		}
-		else
-		{
-			user.code2FA = await this.sendEmail(email_gotten);
+
+			const updateResponse = await this.prisma.user.update
+			({
+				where: {
+					login_42: user.login_42
+				},
+				data:
+				{
+					code2FA: user.code2FA
+				},
+			});
+
 			return {
-				email: user.email_42,
-				nickname: user.nickname,
-				img_str: user.img_str
+				login_42: user.login_42,
+				error: "Requires 2FA code.",
+				FA_error: true
 			};
 		}
+
+		const wins = await this.prisma.matches.count
+			({
+				where: {
+					idUsuarioVictoria: user.id
+				}
+			});
+		
+		const loses = await this.prisma.matches.count
+			({
+				where: {
+					idUsuarioDerrota: user.id
+				}
+			});
+
+		//	Return User
+		const token = await this.signToken(user.id);
+		return {
+			login_42: user.login_42,
+			nickname: user.nickname,
+			img_str: user.img_str,
+			elo: user.elo,
+			wins: wins,
+			loses: loses,
+			access_token: token.access_token
+		};
+	}
+
+	async signToken(userId: number) : Promise< {access_token: string} > {
+		const payload = {
+			sub: userId,
+		};
+
+		const secret = this.config.get('JWT_SECRET');
+		
+		const token = await this.jwt.signAsync(
+			payload,
+			{
+				expiresIn: '15m',
+				secret: secret,
+			}
+		);
+		
+		
+		return{
+			access_token: token, 
+		};
 	}
 
 
 
 
+	// _____    T R Y	C O D E    ______
 
+	async check_code(str)
+	{
+		const user = await this.prisma.user.findUnique
+		({
+			where: 
+			{
+				login_42: str.login_42,
+			},
+		});
+		//intento de sign desde pantalla 2FA
+		if (str.code2FA != user.code2FA)
+			return { error: "Invalid code "};
 
+		//	Return User
+		const wins = await this.prisma.matches.count
+			({
+				where: {
+					idUsuarioVictoria: user.id
+				}
+			});
+		
+		const loses = await this.prisma.matches.count
+			({
+				where: {
+					idUsuarioDerrota: user.id
+				}
+			});
 
+		const token = await this.signToken(user.id);
+		return {
+			response: "ok",
+			login_42: user.login_42,
+			nickname: user.nickname,
+			img_str: user.img_str,
+			auth2FA: user.auth2FA,
+			elo: user.elo,
+			wins: wins,
+			loses: loses,
+			access_token: token.access_token
+		};
+	}
 
 
 	// _____    G E T    U S E R    ______
 
 	async get_user(str)
 	{
+		console.log(this.redirectUri);
 		try
 		{
 			const response = await axios.post(
 			  'https://api.intra.42.fr/oauth/token',
 			  {
-				client_id: clientId,
-				redirect_uri: redirectUri,
-				client_secret: clientSecret,
+				client_id: this.clientId,
+				redirect_uri: this.redirectUri,
+				client_secret: this.clientSecret,
 				code: str.code,
-				grant_type: grantType,
+				grant_type: this.grantType,
 			  }
 			);
 		
@@ -155,8 +253,6 @@ export class AuthService
 			});
 
 			return (meResponse);
-
-
 		} catch (error)
 		{
 			console.error('Error:', error.response ? error.response.data : error.message);
@@ -194,8 +290,8 @@ export class AuthService
 			{
 				from: 'ft_transcendence_penitencia@outlook.com',
 				to: str_email,
-				subject: 'Hello from Node.js',
-				text: 'You are going away to maybe never no more Norway see, your homeland behold..\nYour code is : ' + random_str,
+				subject: 'TURURURU',
+				text: 'YASIFJOSFIJ SJIODIASODMNKSNDK AFIJISJF ..\nY_o_u_r _c_o_d_e_ _i_s_ _:___' + random_str,
 			};
 		
 			const info = await transporter.sendMail(mailOptions);

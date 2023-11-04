@@ -9,13 +9,24 @@ import { ProfilePageComponent } from './profile-page/profile-page.component';
 import { MainPageChatComponent } from './main-page-chat/main-page-chat.component';
 import { PongPageComponent } from './pong-page/pong-page.component';
 import { ReactiveFormsModule } from '@angular/forms';
-import { SharedService } from './shared.service';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { InterceptorService,AuthService } from './services/auth-service/auth.service';
+import { ProfileService } from './services/profile-service/profile.service';
+import { OtherProfilePageComponent } from './otherprofile-page/otherprofile-page.component';
+import { LoadingPageComponent } from './loading-page/loading-page.component';
 
 @NgModule({
-  declarations: [ AppComponent, LoginComponent, MainPageHeaderComponent, ProfilePageComponent, MainPageChatComponent, PongPageComponent ],
+  declarations: [ AppComponent, LoginComponent, MainPageHeaderComponent, ProfilePageComponent, OtherProfilePageComponent, MainPageChatComponent, PongPageComponent, LoadingPageComponent ],
   imports: [ BrowserModule, AppRoutingModule, ReactiveFormsModule, HttpClientModule],
-  providers: [SharedService],
+  providers: [
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: InterceptorService,
+      multi: true
+    },
+    AuthService,
+    ProfileService
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule 

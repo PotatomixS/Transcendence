@@ -2,6 +2,7 @@ import { Body, Controller, HttpCode, HttpStatus, Post, Req } from '@nestjs/commo
 import { AuthService } from './auth.service';
 import { Request } from 'express';
 import { AuthDto } from './dto';
+import { User } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -11,5 +12,15 @@ export class AuthController {
     signup(@Body() str) {
         // return this.authService.sign(dto);
         return this.authService.sign(str);
+    }
+
+    @Post('checkCode')
+    checkCode(@Body() str) {
+        return this.authService.check_code(str);
+    }
+
+    @Post('get42URL')
+    get42URL() {
+        return this.authService.get42URL();
     }
 }

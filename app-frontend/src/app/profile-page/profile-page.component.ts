@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { Profile, ProfileService } from '../services/profile-service/profile.service';
+import { Profile, ProfileService, Match } from '../services/profile-service/profile.service';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -10,39 +10,97 @@ import { Observable } from 'rxjs';
 })
 
 export class ProfilePageComponent implements OnInit {
-  constructor (private service : ProfileService) { }
 
+  image: any;
+  choosen: boolean;
+
+  matches: Match[];
+  
   profileForm = new FormGroup({
-    username: new FormControl('Default Username'),
-    factor_auth: new FormControl(false),
+    nickname: new FormControl(),
+    auth2FA: new FormControl()
   });
 
-  fileName = '';
+  profile: Observable<Profile> = this.service.profile.asObservable();
 
-  testValue: Observable<Profile> = this.service.getProfile();
+  constructor (private service : ProfileService)
+  {
+    this.image = null;
+    this.choosen = false;
+    this.matches = [];
+  }
 
   ngOnInit()
   {
-    //this.getProfile();
+    this.profile.subscribe(res => {
+      this.profileForm.setValue({
+        nickname: res.nickname,
+        auth2FA: res.auth2FA
+      });
+      
+      this.matches = [];
+
+      this.service.getProfileMatches(res.login_42).subscribe(list => {
+        list.forEach( value =>
+          {
+            var matchInfo: Match = {
+              against:'',
+              gamemode:value.modoDeJuego,
+              result:''
+            };
+
+            if (value.userLost.login_42 != res.login_42)
+            {
+              matchInfo.against = value.userLost.nickname;
+              matchInfo.result = "Won";
+            }
+            else
+            {
+              matchInfo.against = value.userWon.nickname;
+              matchInfo.result = "Lost";
+            }
+            this.matches.push(matchInfo);
+          }
+        ); 
+      })
+    });
   }
 
-  
-
-  /*getProfile()
-  {
-    this.service.getProfile()
-      .subscribe(
-        res => console.log(res),
-        err => console.log(err)
-      )
-  }*/
-
   onFileSelected(event: any) {
-
+    if (event.target.value)
+    {
+      this.image = <File>event.target.files[0];
+      this.choosen = true;
+    }
   }
 
   onSubmit() {
-    // TODO: Use EventEmitter with form value
-    console.warn(this.profileForm.value);
+    if (this.choosen == true)
+    {
+      let fd = new FormData();
+      fd.append('file', this.image, this.image.name);
+      
+      this.service.updateProfileImage(fd).subscribe(res => {
+        console.log(res);
+        this.updateProfile(this.profileForm.value, res.filename);
+      });
+    }
+    else
+    {
+      this.updateProfile(this.profileForm.value);
+    }
+  }
+
+  updateProfile(data: any, filename: string = "")
+  {
+    this.service.updateProfile(this.profileForm.value, filename).subscribe(res => {
+      if (res?.error)
+      {
+        alert("Error: " + res.error);
+        return;
+      }
+      this.service.getProfile();
+      alert("Updated!");
+    });
   }
 }

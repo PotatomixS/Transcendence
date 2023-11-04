@@ -53,12 +53,6 @@ RUN yarn add @nestjs/config
 
 
 
-#   ___   Installing Password enrpiter "Argon2"   ___
-
-RUN yarn add argon2
-
-
-
 #   ___   Installing Passport for auth   ___
 
 RUN yarn add @nestjs/passport passport
@@ -71,6 +65,7 @@ RUN yarn add -D @types/passport-jwt
 
 RUN npm install express
 RUN npm install multer
+RUN npm i -D @types/multer
 RUN npm install --save-dev nodemon
 
 #RUN node /js/app.js

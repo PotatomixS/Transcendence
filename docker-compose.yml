@@ -28,6 +28,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV}
       PORT: ${BACKEND_PORT}
+      
 
     ports:
       - ${BACKEND_PORT}:${BACKEND_PORT}
@@ -35,6 +36,9 @@ services:
 
     networks:
       - nesjs-network
+
+    env_file:
+    - .env
 
 
 
@@ -85,25 +89,25 @@ services:
 
   # _____   PG Admin   _____ #
   
-  pgadmin:
-    depends_on: 
-      - postgres
+  # pgadmin:
+  #   depends_on: 
+  #     - postgres
 
-    container_name: pgadmin
+  #   container_name: pgadmin
 
-    image: dpage/pgadmin4
+  #   image: dpage/pgadmin4
 
-    env_file:
-      - .env
+  #   env_file:
+  #     - .env
 
-    ports:
-      - ${PGADMIN_PORT}:80
+  #   ports:
+  #     - ${PGADMIN_PORT}:80
 
-    volumes:
-      - ./pgdata/pgadmin:/root/.pgadmin
+  #   volumes:
+  #     - ./pgdata/pgadmin:/root/.pgadmin
 
-    networks:
-      - nesjs-network
+  #   networks:
+  #     - nesjs-network
 
 
 

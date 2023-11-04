@@ -1,24 +1,48 @@
-
 <div class="mainComponent">
-    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="formContainer">
-        <div class="profile-image box">
-            <input type="file" class="file-input" (change)="onFileSelected($event)" #fileUpload>
+    <div class="formContainer">
+        <div class="profile-form box">
+            <h2>PERFIL</h2>
+            <br>
+            <input type="file" class="file-input" (input)="onFileSelected($event)" #fileUpload>
             <div class="file-upload">
-                <p>{{fileName || "No se ha subido imagen aun."}}</p>
-                <button mat-mini-fab color="primary" class="upload-btn" (click)="fileUpload.click()">
+                <span>Selecciona la nueva imagen</span>
+                <p style="color: orange;"><b>{{image?.name}}</b></p>
+                <button type="none" mat-mini-fab color="primary" class="upload-btn" (click)="fileUpload.click()">
                     Subir imagen
                 </button>
             </div>
-        </div>
-        <div class="profile-form box">
-            <label for="username">Nombre de usuario: </label>
-            <input id="username" type="text" formControlName="username">
             <br>
-            <label for="factor_auth">Autentificación en dos pasos: </label>
-            <input id="factor_auth" type="checkbox" formControlName="factor_auth">
-            <br><br>
-            <p>Completa el formulario para habilitar el botón.</p>
-            <button type="submit" [disabled]="!profileForm.valid">Guardar</button>
+            <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+                <label for="nickname">Nombre de usuario: </label>
+                <input id="nickname" type="text" formControlName="nickname">
+                <br>
+                <label for="auth2FA">Autentificación en dos pasos: </label>
+                <input id="auth2FA" type="checkbox" formControlName="auth2FA">
+                <br><br>
+                <button type="submit" [disabled]="!profileForm.valid">Guardar</button>
+            </form>
         </div>
-    </form>
+        <div class="profile-stats box">
+            <h2>ESTADÍSTICAS</h2>
+            <p>Elo: {{(profile | async)?.elo}}</p>
+            <br>
+            <p>Wins: {{(profile | async)?.wins}}</p>
+            <p>Loses: {{(profile | async)?.loses}}</p>
+        </div>
+        <div class="profile-matches box">
+            <h2>HISTORIAL</h2>
+            <table>
+                <tr>
+                    <th>User</th>
+                    <th>Gamemode</th>
+                    <th>Result</th>
+                </tr>
+                <tr *ngFor="let match of matches">
+                    <td>{{match.against}}</td>
+                    <td>{{match.gamemode}}</td>
+                    <td>{{match.result}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
 </div>

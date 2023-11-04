@@ -1,0 +1,78 @@
+.mainComponent
+{
+    width: 100%;
+    height: 100%;
+}
+
+.formContainer
+{
+    padding: 10%;
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+}
+
+.file-input {
+    display: none;
+}
+
+.profile-image {
+    flex-grow: 1;
+}
+
+.profile-stats {
+    flex-grow: 2;
+}
+
+.profile-matches {
+    flex-grow: 7;
+}
+
+label, p, button, input {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    font-size: 1vw;
+}
+
+button {
+    border-radius: 10%;
+    background-color: white;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.box {
+    text-align: center;
+    background-color: white;
+    border: 2px solid darkgray;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.profile-image img {
+    aspect-ratio: 1 / 1;
+    height: 100px;
+    border-radius: 50%;
+}
+
+.profile-matches table {
+    width: 100%;
+    font-size: 24px;
+}
+
+.profile-matches table tr:nth-child(odd) {
+    width: 100%;
+    background-color: rgb(197, 197, 197);
+}
+
+.profile-matches table tr:nth-child(even) {
+    width: 100%;
+    background-color: rgb(150, 150, 150);
+}
+
+.profile-matches table tr:nth-child(1) {
+    width: 100%;
+    background-color: black;
+    color: white;
+    font-size: 28px;
+}
+

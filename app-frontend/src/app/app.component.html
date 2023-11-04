@@ -2,10 +2,12 @@
   <app-login></app-login>
 </div>
 
-<app-main-page-header *ngIf="!ShowLogin"></app-main-page-header>
+<app-main-page-header *ngIf="ShowPage"></app-main-page-header>
 
-<div *ngIf="!ShowLogin" class="main">
+<div *ngIf="ShowPage" class="main">
   <router-outlet></router-outlet>
 </div>
 
-<app-main-page-chat class="chat" *ngIf="!ShowLogin"></app-main-page-chat>
+<app-main-page-chat class="chat" *ngIf="ShowPage"></app-main-page-chat>
+
+<app-loading-page></app-loading-page>

@@ -4,18 +4,27 @@
     height: 100%;
 }
 
-.formContainer
+.formContainer, .historyContainer
 {
     padding: 10%;
+    display: flex;
+    align-items: stretch;
 }
 
 .file-input {
     display: none;
 }
 
-.profile-image, .profile-form {
-    float: left;
-    margin-right: 30px;
+.profile-form {
+    flex-grow: 1;
+}
+
+.profile-stats {
+    flex-grow: 2;
+}
+
+.profile-matches {
+    flex-grow: 7;
 }
 
 label, p, button, input {
@@ -31,8 +40,31 @@ button {
 }
 
 .box {
+    text-align: center;
     background-color: white;
     border: 2px solid darkgray;
     padding: 10px;
     border-radius: 10px;
+}
+
+.profile-matches table {
+    width: 100%;
+    font-size: 24px;
+}
+
+.profile-matches table tr:nth-child(odd) {
+    width: 100%;
+    background-color: rgb(197, 197, 197);
+}
+
+.profile-matches table tr:nth-child(even) {
+    width: 100%;
+    background-color: rgb(150, 150, 150);
+}
+
+.profile-matches table tr:nth-child(1) {
+    width: 100%;
+    background-color: black;
+    color: white;
+    font-size: 28px;
 }
