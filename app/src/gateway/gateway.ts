@@ -28,7 +28,10 @@ export class MyGateway
 {
 	iv = randomBytes(16);
 
-	constructor( private prisma: PrismaService,	private config: ConfigService) {}
+	constructor( private prisma: PrismaService,	private config: ConfigService)
+	{
+		this.gameLoop();			
+	}
 	@WebSocketServer()
 	server: Server;
 
@@ -53,7 +56,7 @@ export class MyGateway
 	}
 
 	async decryptPassword(encryptedText: any) : Promise<string>
-	{
+	{	
 		if (encryptedText == null)
 			return "";
 
@@ -79,7 +82,6 @@ export class MyGateway
 		this.server.on('connection', (socket) =>
 		{
 			this.server.to(socket.id).emit('InitSocketId', socket.id);
-			this.gameLoop();
 		})
 	}
  
@@ -165,6 +167,14 @@ export class MyGateway
 		{
 			this.ft_unblock(body);
 		}
+		else if (words[0] == "/friends")
+		{
+			this.ft_friends(body);
+		}
+		else if (words[0] == "/showprofile")
+		{
+			this.ft_showprofile(body);
+		}
 
 		//              ______     Channels     ______
 
@@ -204,6 +214,10 @@ export class MyGateway
 		{
 			this.ft_giveAdmin(body);
 		}
+		else if (words[0] == "/changePassword")
+		{
+			this.ft_changePassword(body);
+		}
 		else
 		{
 			this.ft_send(body);
@@ -215,9 +229,7 @@ export class MyGateway
 
 
 
-	/*
-	**		_________________________     ft_join     _________________________
-	*/
+
 	
 
 
@@ -417,6 +429,148 @@ export class MyGateway
 
 
 	/*
+	**		_______________________     ft_friends     _______________________
+	*/
+
+	async ft_friends(body: any)
+	{
+		//              ______     buscar tu persona     ______
+
+		const my_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+
+		//              ______  Mostrar tus friends cuando eres 1   ______
+
+		const all_friends_when_I_am_User_1 = await this.prisma.friends.findMany
+		({
+			where:
+			{
+				idUser1: my_user.id,
+			},
+		});
+
+		const all_friends_when_I_am_User_2 = await this.prisma.friends.findMany
+		({
+			where:
+			{
+				idUser2: my_user.id,
+			},
+		});
+		
+		this.server.to(my_user.socketId).emit('onMessage',
+		{
+			user: "",
+			message: "Friends:",
+		});
+
+		for (const each_friend of all_friends_when_I_am_User_1)
+		{
+			const user2print = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					id: each_friend.idUser2,
+				},
+			});
+
+			this.server.to(my_user.socketId).emit('onMessage',
+			{
+				user: "",
+				message: ("1-   " + user2print.login_42 + " | " + each_friend.idUser1 + "  " +  each_friend.idUser2),
+			});
+		}
+
+		for (const each_friend of all_friends_when_I_am_User_2)
+		{
+			const user2print = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					id: each_friend.idUser1,
+				},
+			});
+
+			this.server.to(my_user.socketId).emit('onMessage',
+			{
+				user: "",
+				message: ("2-   " + user2print.login_42 + " | " + each_friend.idUser1 + "  " +  each_friend.idUser2),
+			});
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_______________________     ft_friends     _______________________
+	*/
+
+	async ft_showprofile(body: any)
+	{
+		const words = body.message.split(' ');
+
+		const my_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		this.server.to(my_user.socketId).emit('onMessage',
+		{
+			user: body.userName,
+			message: "Esto nunca se va a enviar",
+			other: 
+				{
+					command: "Friend",
+					friend: words[1]
+				},
+		});
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
 	**		_________________________     ft_join     _________________________
 	*/
 	
@@ -581,7 +735,7 @@ export class MyGateway
 							data:
 							{
 								Name: words[1],
-								Password: null,
+								Password: Buffer.from([])
 							},
 						});
 					}
@@ -1068,7 +1222,8 @@ export class MyGateway
 
 
 		if (JoinedChannels_this_user && JoinedChannels_user_to_kick && 
-			(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_kick.idChannel)
+			(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_kick.idChannel
+			&& this_user.login_42 != to_kick_user.login_42)
 		{
 			const deleteJoinedChannel = await this.prisma.joinedChannels.delete
 			({
@@ -1166,7 +1321,8 @@ export class MyGateway
 				//              ______     Ban     ______
 
 				if (JoinedChannels_this_user && JoinedChannels_user_to_ban && 
-					(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel)
+					(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel
+					&& this_user.login_42 != to_kick_user.login_42)
 				{
 
 
@@ -1288,7 +1444,8 @@ export class MyGateway
 				//              ______     Ban     ______
 
 				if (JoinedChannels_this_user && JoinedChannels_user_to_ban && 
-					(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel)
+					(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel
+					&& this_user.login_42 != to_kick_user.login_42)
 				{
 
 					//              ______     Delete JoinedChannels table      ______
@@ -1409,7 +1566,8 @@ export class MyGateway
 				//              ______     Give Admin     ______
 
 				if (JoinedChannels_this_user && JoinedChannels_to_admin_user && 
-					(this_user.channelRol == "owner") && JoinedChannels_this_user.idChannel == JoinedChannels_to_admin_user.idChannel)
+					(this_user.channelRol == "owner") && JoinedChannels_this_user.idChannel == JoinedChannels_to_admin_user.idChannel
+					&& this_user.login_42 != to_admin_user.login_42)
 				{
 
 					await this.prisma.user.update
@@ -1439,11 +1597,98 @@ export class MyGateway
 						user: "Server",
 						message: "You were made admin by " + this_user.login_42 + ". Congratulations!",
 					});
-
 				}
 			}
 		}
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_________________________     ft_changePassword     _________________________
+	*/
+
+	async ft_changePassword(body: any)
+	{
+		const words = body.message.split(' ');
+
+
+		//              ______     Get users     ______
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+
+		//              ______     Get joinedChannels     ______
+
+		const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: words[1],
+			},
+		});
+
+
+		//              ______     kick     ______
+
+
+		if (JoinedChannels_this_user && (this_user.channelRol == "owner"))
+		{
+
+			//update server pass
+
+			await this.prisma.channel.update
+			({
+				where:
+				{
+					Name: JoinedChannels_this_user.idChannel
+				},
+				data:
+				{
+					//pene
+					// Password: String(p_socketId),
+				},
+			});
+
+			this.server.to(this_user.socketId).emit('onMessage',
+			{
+				user: "Server",
+				message: "You kicked " + words[1],
+			});
+		}
+	}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1537,6 +1782,46 @@ export class MyGateway
 			}
 		}
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1712,6 +1997,5 @@ export class MyGateway
 			if (pos.player2_y > 890)
 				pos.player2_y = 890;
 		}
-		this.server.emit('gameChanges', pos);
 	}
 }

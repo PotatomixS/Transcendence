@@ -29,8 +29,7 @@ model User {
 	wins			matches[]	@relation("wins")
 	loses			matches[]	@relation("loses")
 
-	friend1			Friends[]	@relation("friend1")
-	friend2			Friends[]	@relation("friend2")
+1	friend2			Friends[]	@relation("friend2")
 	// socket_id		Int
 
 	channelRol		String		@default("user")		// owner / admin / user
