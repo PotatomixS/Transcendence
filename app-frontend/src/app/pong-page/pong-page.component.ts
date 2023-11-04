@@ -13,6 +13,8 @@ export class PongPageComponent implements OnInit
   searching: boolean;
   matchPlaying: boolean;
 
+  match: any;
+
   @ViewChild("game")  
   private gameCanvas: ElementRef;
   
@@ -64,6 +66,8 @@ export class PongPageComponent implements OnInit
     if (id == 0)
     {
       this.profileService.findMatch().subscribe(res => {
+        this.match = res;
+        
         if (res?.findingMatch == true)
           this.searching = true;
         else
@@ -76,6 +80,8 @@ export class PongPageComponent implements OnInit
     else
     {
       this.profileService.acceptChallenge(id).subscribe(res => {
+        this.match = res;
+
         this.matchPlaying = true;
         this.loadMatch();
       });
