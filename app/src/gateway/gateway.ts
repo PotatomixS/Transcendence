@@ -219,209 +219,6 @@ export class MyGateway
 	**		_________________________     ft_join     _________________________
 	*/
 	
-	async ft_join(body: any)
-	{
-
-		//              ______     Echar si ya está joineado     ______
-	
-		const this_user = await this.prisma.user.findUnique
-		({
-			where:
-			{
-				login_42: body.userName,
-			},
-		});
-
-		const is_on_channel_alredy = await this.prisma.joinedChannels.findUnique
-		({
-			where:
-			{
-				idUser: body.userName,
-			},
-		});
-
-		if (is_on_channel_alredy)
-		{
-			this.server.to(this_user.socketId).emit('onMessage',
-			{
-				user: "Server",
-				message: "You are alredy in a channel, joputa",
-			});
-		}
-
-
-		if (!is_on_channel_alredy)
-		{
-			//              ______     Busca y crea canales     ______
-
-			const words = body.message.split(' ');
-
-
-			const channel_exists = await this.prisma.channel.findUnique
-			({
-				where:
-				{
-					Name: words[1],
-				},
-			});
-			
-			if (!channel_exists)
-			{
-				if (words.length != 4)
-				{
-					this.server.to(this_user.socketId).emit('onMessage',
-					{
-						user: "Server",
-						message: "Wrong format for new Channel. To create a channel with password:",
-					});
-					this.server.to(this_user.socketId).emit('onMessage',
-					{
-						user: "Server",
-						message: "/join [ServerName] password:[yourpassword] [public / private]",
-					});
-					this.server.to(this_user.socketId).emit('onMessage',
-					{
-						user: "Server",
-						message: "or withour password",
-					});
-					this.server.to(this_user.socketId).emit('onMessage',
-					{
-						user: "Server",
-						message: "/join [ServerName] noPassword [public / private]",
-					});
-				}
-				else
-				{
-					// Crear el channel cno la password
-					var pass_passed = 0;
-
-					if (words[2].startsWith("password:") == true)
-					{
-						pass_passed = 1;
-
-						const parts = words[2].split(":");
-						console.log(words[1]);
-						console.log(parts[1]);
-						const encryptedPassword = await this.encryptPassword(parts[1]);
-						const channel8 = await this.prisma.channel.create
-						({
-							data:
-							{
-								Name: words[1],
-								Password: encryptedPassword,
-							},
-						});
-					}
-					else if (words[2] === ("noPassword"))
-					{
-						pass_passed = 1;
-
-						const channel8 = await this.prisma.channel.create
-						({
-							data:
-							{
-								Name: words[1],
-								Password: null,
-							},
-						});
-					}
-					else
-					{
-						this.server.to(this_user.socketId).emit('onMessage',
-						{
-							user: "Server",
-							message: "Wrong format for new Channel. To create a channel with password:",
-						});
-						this.server.to(this_user.socketId).emit('onMessage',
-						{
-							user: "Server",
-							message: "/join [ServerName] password:[yourpassword] [public / private]",
-						});
-						this.server.to(this_user.socketId).emit('onMessage',
-						{
-							user: "Server",
-							message: "or withour password",
-						});
-						this.server.to(this_user.socketId).emit('onMessage',
-						{
-							user: "Server",
-							message: "/join [ServerName] noPassword [public / private]",
-						});
-					}
-					if (words[3] === ("private"))
-					{
-						const channel8 = await this.prisma.channel.findFirst
-						({
-							where:
-							{
-								Name: words[1],
-							},
-						});
-						if (channel8)
-							channel8.isPrivate = true;
-					}
-					else if (words[3] === ("public"))
-					{
-						const channel8 = await this.prisma.channel.findFirst
-						({
-							where:
-							{
-								Name: words[1],
-							},
-						});
-						if (channel8)
-							channel8.isPrivate = false;
-					}
-					if (pass_passed == 1)
-					{
-						const joined_channel_table = await this.prisma.joinedChannels.create
-						({
-							data:
-							{
-								idUser: body.userName,
-								idChannel: words[1],
-							},
-						});
-					}
-				}
-			}
-
-			// 			 _____     Se une. Crea joinedChannels       _____
-
-			if (channel_exists)
-			{
-				const channel = await this.prisma.channel.findUnique
-				({
-					where:
-					{
-						Name: words[1],
-					},
-				});
-				console.log("Terreros");
-				const decryptedChannelPassword = await this.decryptPassword(channel.Password);
-				if (decryptedChannelPassword === words[2] || decryptedChannelPassword === "")
-				{
-					console.log("Riera");
-					const joined_channel_table = await this.prisma.joinedChannels.create
-					({
-						data:
-						{
-							idUser: body.userName,
-							idChannel: words[1],
-						},
-					});
-				}
-				else
-				{
-					this.server.to(this_user.socketId).emit('onMessage',
-					{
-						user: "Server",
-						message: "Wrong password",
-					});
-				}
-			}
-		}
-	}
 
 
 
@@ -765,12 +562,13 @@ export class MyGateway
 						const parts = words[2].split(":");
 						
 						console.log(parts[1]);
+						const encryptedPassword = await this.encryptPassword(parts[1]);
 						const channel8 = await this.prisma.channel.create
 						({
 							data:
 							{
 								Name: words[1],
-								Password: parts[1],
+								Password: encryptedPassword,
 							},
 						});
 					}
@@ -783,7 +581,7 @@ export class MyGateway
 							data:
 							{
 								Name: words[1],
-								Password: "",
+								Password: null,
 							},
 						});
 					}
@@ -909,8 +707,8 @@ export class MyGateway
 				});
 
 				console.log("Terreros");
-
-				if (channel.Password === words[2] || channel.Password == "")
+				const decryptedChannelPassword = await this.decryptPassword(channel.Password);
+				if (decryptedChannelPassword === words[2] || decryptedChannelPassword === "")
 				{
 					console.log("Riera");
 					const joined_channel_table = await this.prisma.joinedChannels.create

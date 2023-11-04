@@ -22,7 +22,7 @@ export class PongPageComponent implements OnInit
 
   constructor()
   {
-    this.matchPlaying = false;
+    this.matchPlaying = true;
 
     this.drawNumbersArray  = [this.draw0.bind(this), this.draw1.bind(this),
        this.draw2.bind(this), this.draw3.bind(this), this.draw4.bind(this),
