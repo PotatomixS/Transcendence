@@ -218,6 +218,120 @@ export class UserService
 		return matches;
 	}
 
+	// _____    G E T	P R O F I L E	C H A L L E N G E S    ______
+	async getProfileChallenges(str)
+	{
+		const user = await this.prisma.user.findUnique
+		({
+			where: 
+			{
+				login_42: str.login_42
+			},
+		});
+
+		//	Return User
+		if (!user)
+		{
+			return {error: "no user found."};
+		}
+
+		const challenges = await this.prisma.gameRooms.findMany
+			({
+				where: {
+					idPlayerRight: user.id,
+					waiting: true,
+					findingMatch: false
+				},
+				include: {
+					playerLeft: true,
+					playerRight: true
+				}
+			});
+
+		return challenges;
+	}
+
+	// _____    F I N D		M A T C H    ______
+	async findMatch(str)
+	{
+		const user = await this.prisma.user.findUnique
+		({
+			where: 
+			{
+				login_42: str.login_42
+			},
+		});
+
+		var room;
+		var rooms = await this.prisma.gameRooms.findMany
+		({
+			where: 
+			{
+				AND: {
+					waiting: true,
+					findingMatch: true
+				},
+				NOT: {
+					idPlayerLeft: user.id
+				}
+			},
+		});
+
+		if (rooms.length <= 0)
+		{
+			room = await this.prisma.gameRooms.create
+			({
+				data: 
+				{
+					idPlayerLeft: user.id,
+					idPlayerRight: user.id,	//TOFIX: no se como cambiar esto
+					waiting: true,
+					findingMatch: true
+				},
+			});
+		}
+		else
+		{
+			room = await this.prisma.gameRooms.update
+			({
+				where: 
+				{
+					id: rooms[0].id
+				},
+				data: 
+				{
+					idPlayerRight: user.id,
+					waiting: false,
+					findingMatch: false
+				},
+			});
+		}
+
+		//TODO: hacer lo que tenga que hacer para meter los dos sockets en la misma room
+
+		return room;
+	}
+
+	// _____    A C C E P T		C H A L L E N G E    ______
+	async acceptChallenge(str)
+	{
+		var room = await this.prisma.gameRooms.update
+		({
+			where: 
+			{
+				id: str.room_id
+			},
+			data:
+			{
+				waiting: false
+			}
+		});
+
+		//TODO: hacer lo que tenga que hacer para meter los dos sockets en la misma room
+
+		return room;
+	}
+
 	// _____    S E T	P R O F I L E	I N F O    ______
 	async setProfileInfo(str)
 	{

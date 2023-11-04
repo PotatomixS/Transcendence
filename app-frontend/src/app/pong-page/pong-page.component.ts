@@ -1,5 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { io } from 'socket.io-client';
+import { ProfileService, Profile } from '../services/profile-service/profile.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-pong-page',
@@ -8,6 +10,7 @@ import { io } from 'socket.io-client';
 })
 export class PongPageComponent implements OnInit
 {
+  searching: boolean;
   matchPlaying: boolean;
 
   @ViewChild("game")  
@@ -19,21 +22,32 @@ export class PongPageComponent implements OnInit
   private drawNumbersArray: ((x: number, y: number) => void)[];
   private socket : any;
 
+  private login_42: any;
 
-  constructor()
+  challenges: any[] = [];
+
+  profile: Observable<Profile> = this.profileService.profile.asObservable();
+
+  constructor(private profileService: ProfileService)
   {
-    this.matchPlaying = true;
+    this.searching = false;
+    this.matchPlaying = false;
 
     this.drawNumbersArray  = [this.draw0.bind(this), this.draw1.bind(this),
-       this.draw2.bind(this), this.draw3.bind(this), this.draw4.bind(this),
-        this.draw5.bind(this), this.draw6.bind(this), this.draw7.bind(this),
-        this.draw8.bind(this), this.draw9.bind(this)];
-        this.socket = io("http://" + window.location.host + ":3000");
-      }
+      this.draw2.bind(this), this.draw3.bind(this), this.draw4.bind(this),
+      this.draw5.bind(this), this.draw6.bind(this), this.draw7.bind(this),
+      this.draw8.bind(this), this.draw9.bind(this)];
+    this.socket = io("http://" + window.location.host + ":3000");
+  }
       
-      ngOnInit()
-      {
-        
+  ngOnInit()
+  {
+    this.profile.subscribe(res => {
+      this.login_42 = res.login_42;
+      this.profileService.getChallenges(res.login_42).subscribe(challenges => {
+        this.challenges = challenges;
+      });
+    })
   }
   
   ngAfterViewInit()
@@ -41,6 +55,35 @@ export class PongPageComponent implements OnInit
     this.canvasElement = document.getElementById("cv");
     this.context = this.gameCanvas.nativeElement.getContext("2d");
     this.context.fillStyle = "white";
+  }
+
+  startMatch(id: number = 0)
+  {
+    //si es 0 buscar match
+    //subscribe y todo eso y después empezar
+    if (id == 0)
+    {
+      this.profileService.findMatch().subscribe(res => {
+        if (res?.findingMatch == true)
+          this.searching = true;
+        else
+        {
+          this.matchPlaying = true;
+          this.loadMatch();
+        }
+      });
+    }
+    else
+    {
+      this.profileService.acceptChallenge(id).subscribe(res => {
+        this.matchPlaying = true;
+        this.loadMatch();
+      });
+    }
+  }
+
+  loadMatch()
+  {
     this.socket.on("gameChanges", (data: any) =>
     {
       this.context.clearRect
@@ -172,7 +215,6 @@ export class PongPageComponent implements OnInit
 
   findMatch()
   {
-    //TODO: la idea es meter lo del canvas de la parte superior en una función que lo monte cuando se muestre
-    this.matchPlaying = true;
+    this.startMatch();
   }
 }

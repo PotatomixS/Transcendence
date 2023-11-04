@@ -31,6 +31,9 @@ model User {
 
 	friend1			Friends[]	@relation("friend1")
 	friend2			Friends[]	@relation("friend2")
+
+	player1			gameRooms[]	@relation("player1")
+	player2			gameRooms[]	@relation("player2")
 	// socket_id		Int
 
 	channelRol		String		@default("user")		// owner / admin / user
@@ -93,8 +96,14 @@ model BlockedUsers {
 
 model gameRooms {
 	id					Int			@id @default(autoincrement())
-	playerLeft			String
-	playerRight			String
+	playerLeft			User		@relation("player1", fields: [idPlayerLeft], references: [id])
+	playerRight			User		@relation("player2", fields: [idPlayerRight], references: [id])
+
+	idPlayerLeft		Int
+	idPlayerRight		Int
+
+	waiting				Boolean
+	findingMatch		Boolean
 }
 
 model viewers {
