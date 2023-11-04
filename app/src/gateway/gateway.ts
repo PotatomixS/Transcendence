@@ -121,12 +121,24 @@ export class MyGateway
 	}
 
 
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/*
 	**		______________     Receive and distribute a message     ______________
 	*/
@@ -135,33 +147,60 @@ export class MyGateway
 	onNewMessage(@MessageBody() body: any)
 	{
 		const msg: string = String(body.message);
-		console.log(body.userName);
+		const words = body.message.split(' ');
 		
-		// body.user = "ahernand";								// Borrar
+		//              ______     DMs     ______
 		
-		if (msg.startsWith("/join"))
-		{
-			this.ft_join(body);
-		}
-		else if (msg.startsWith("/dm"))
+		if (words[0] == "/dm")
 		{
 			this.ft_dm(body);
 		}
-		else if (msg.startsWith("/leave"))
-		{
-			this.ft_leave(body);
-		}
-		else if (msg.startsWith("/block"))
+		else if (words[0] == "/block")
 		{
 			this.ft_block(body);
 		}
-		else if (msg.startsWith("/unblock"))
+		else if (words[0] == "/unblock")
 		{
 			this.ft_unblock(body);
 		}
-		else if (msg.startsWith("/list"))
+
+		//              ______     Channels     ______
+
+		else if (words[0] == "/join")
+		{
+			this.ft_join(body);
+		}
+		else if (words[0] == "/leave")
+		{
+			this.ft_leave(body);
+		}
+		else if (words[0] == "/list")
 		{
 			this.ft_list(body);
+		}
+		else if (words[0] == "/alllist")
+		{
+			this.ft_alllist(body);
+		}
+		
+
+		//              ______     Admin commands     ______
+
+		else if (words[0] == "/kick")
+		{
+			this.ft_kick(body);
+		}
+		else if (words[0] == "/ban")
+		{
+			this.ft_ban(body);
+		}
+		else if (words[0] == "/mute")
+		{
+			this.ft_mute(body);
+		}
+		else if (words[0] == "/giveAdmin")
+		{
+			this.ft_giveAdmin(body);
 		}
 		else
 		{
@@ -171,9 +210,6 @@ export class MyGateway
 	}
 
 
-	
-
-	
 
 
 
@@ -384,83 +420,13 @@ export class MyGateway
 			}
 		}
 	}
-	
-	
-	
-
-	
 
 
 
-	/*
-	**		_________________________     ft_leave     _________________________
-	*/
-	
-	//This might not work, retest
 
-	async  ft_leave(body: any)
-	{
 
-		// 			 _____     Ver si el usuario está en un canal o no     _____
 
-		const isUserinJoinedChannel = await this.prisma.joinedChannels.findUnique
-		({
-			where:
-			{
-				idUser: body.userName,
-			},
-		});
- 
 
-		// 			 _____     Si no está en ningún canal, busco el canal en el que está, guardo su nombre, le quito del canal, encuentro si hay más gente en ese canal y si no hay nadie más lo borro      _____
-
-		if (isUserinJoinedChannel)
-		{
-			const whichChannelUserIsIn = await this.prisma.joinedChannels.findFirst
-			({
-				where:
-				{
-					idUser: body.userName,
-				},
-			})
-
-			const channelName: string = whichChannelUserIsIn.idChannel;
-			const deleteUser = await this.prisma.joinedChannels.delete
-			({
-				where:
-				{
-					idUser: body.userName,
-				},
-			})
-			const allElements = await this.prisma.joinedChannels.findMany
-			({
-				where:
-				{
-					idChannel: channelName,
-				},
-			});
-			if (allElements.length === 0)
-			{
-				const whichChannel = await this.prisma.channel.delete
-				({
-					where:
-					{
-						Name: channelName,
-					},
-				})
-
-				console.log(channelName);
-			}
-			else
-			{
-				for (const uno of allElements)
-				{
-					console.log(uno.idChannel);
-					console.log(uno.idUser);
-				}
-			}
-		}
-	}
 
 
 
@@ -527,6 +493,18 @@ export class MyGateway
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 	/*
 	**		_______________________     ft_block     _______________________
 	*/
@@ -559,6 +537,18 @@ export class MyGateway
 			});
 		}
 	}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -611,11 +601,567 @@ export class MyGateway
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_________________________     ft_join     _________________________
+	*/
+	
+	async ft_join(body: any)
+	{
+
+		//              ______     Echar si ya está joineado     ______
+	
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		const is_on_channel_alredy = await this.prisma.joinedChannels.findUnique
+		({
+			where:
+			{
+				idUser: body.userName,
+			},
+		});
+
+		if (is_on_channel_alredy)
+		{
+			this.server.to(this_user.socketId).emit('onMessage',
+			{
+				user: "Server",
+				message: "You are alredy in a channel, joputa",
+			});
+		}
+
+
+		if (!is_on_channel_alredy)
+		{
+			//              ______     Busca  canales     ______
+
+			const words = body.message.split(' ');
+
+
+			const channel_exists = await this.prisma.channel.findFirst
+			({
+				where:
+				{
+					Name: words[1],
+				},
+			});
+			
+
+			//              ______     Si está baneado     ______
+
+
+			const banned_channel_exists = await this.prisma.usersBannedChannel.findFirst
+			({
+				where:
+				{
+					idUser: this_user.login_42,
+					idChannel: words[1],
+					
+				},
+			});
+			
+			if (banned_channel_exists)
+			{
+				this.server.to(this_user.socketId).emit('onMessage',
+				{
+					user: "Server",
+					message: "You are banned from this server.",
+				});
+			}
+
+
+			//              ______     Si está muteado     ______
+
+			const muted_channel_exists = await this.prisma.userMutedChannel.findFirst
+			({
+				where:
+				{
+					idUser: this_user.login_42,
+					idChannel: words[1],
+					
+				},
+			});
+
+			var isAllowedIn = true;
+
+			if (muted_channel_exists)
+			{
+				const dateNow: Date = new Date();
+
+				if (dateNow >= muted_channel_exists.dateAllowedIn)
+				{
+					isAllowedIn = true;
+					this.server.to(this_user.socketId).emit('onMessage',
+					{
+						user: "Server",
+						message: "You were muted, but now, you are allowed in. Rejoice.",
+					});
+					const deleteUser = await this.prisma.userMutedChannel.deleteMany
+					({
+						where:
+						{
+							idUser: body.userName,
+							idChannel: words[1],
+						},
+					})
+				}
+				else
+				{
+					isAllowedIn = false;
+					this.server.to(this_user.socketId).emit('onMessage',
+					{
+						user: "Server",
+						message: "You are muted from this channel. Patience.",
+					});
+				}
+			}
+			
+
+
+
+
+			//              ______     CREA el canal si no existe     ______
+
+			if (!channel_exists)
+			{
+				if (words.length != 4)
+				{
+					this.ft_error_create_channel(body);
+				}
+				else
+				{
+					// Crear el channel cno la password
+					var pass_passed = 0;
+
+					//              ______     Crea el channel dependiendo si tiene password     ______
+
+					if (words[2].startsWith("password:") == true)
+					{
+						pass_passed = 1;
+
+						const parts = words[2].split(":");
+						
+						console.log(parts[1]);
+						const channel8 = await this.prisma.channel.create
+						({
+							data:
+							{
+								Name: words[1],
+								Password: parts[1],
+							},
+						});
+					}
+					else if (words[2] === ("noPassword"))
+					{
+						pass_passed = 1;
+
+						const channel8 = await this.prisma.channel.create
+						({
+							data:
+							{
+								Name: words[1],
+								Password: "",
+							},
+						});
+					}
+					else
+					{
+						this.ft_error_create_channel(body);
+					}
+
+
+
+
+					//              ______     Update la vairable de privado     ______
+
+					if (words[3] === ("private"))
+					{
+						const channel8 = await this.prisma.channel.findFirst
+						({
+							where:
+							{
+								Name: words[1],
+							},
+						});
+						if (channel8)
+						{
+							console.log("Ha pasado por private");
+
+							await this.prisma.channel.update
+							({
+								where:
+								{
+									Name: words[1],
+								},
+								data:
+								{
+									isPrivate: true,
+								},
+							});
+						}
+					}
+					else if (words[3] === ("public"))
+					{
+						const channel8 = await this.prisma.channel.findFirst
+						({
+							where:
+							{
+								Name: words[1],
+							},
+						});
+						if (channel8)
+						{
+							console.log("es publico");
+							await this.prisma.channel.update
+							({
+								where:
+								{
+									Name: words[1],
+								},
+								data:
+								{
+									isPrivate: false,
+								},
+							});
+						}
+					}
+					else
+					{
+						this.ft_error_create_channel(body);
+					}
+
+
+
+
+					//              ______     Si todo va bien, crea la tabla     ______
+
+					if (pass_passed == 1)
+					{
+
+						const this_user = await this.prisma.user.findUnique
+						({
+							where:
+							{
+								login_42: body.userName,
+							},
+						});
+
+						await this.prisma.user.update
+						({
+							where:
+							{
+								id: this_user.id
+							},
+							data:
+							{
+								channelRol: String("owner"),
+							},
+						});
+						
+						const joined_channel_table = await this.prisma.joinedChannels.create
+						({
+							data:
+							{
+								idUser: body.userName,
+								idChannel: words[1],
+							},
+						});
+					}
+				}
+			}
+
+
+
+
+			// 			 _____     Se une. Crea joinedChannels       _____
+
+			if (channel_exists && !banned_channel_exists && isAllowedIn)
+			{
+				const channel = await this.prisma.channel.findUnique
+				({
+					where:
+					{
+						Name: words[1],
+					},
+				});
+
+				console.log("Terreros");
+
+				if (channel.Password === words[2] || channel.Password == "")
+				{
+					console.log("Riera");
+					const joined_channel_table = await this.prisma.joinedChannels.create
+					({
+						data:
+						{
+							idUser: body.userName,
+							idChannel: words[1],
+						},
+					});
+				}
+				else
+				{
+					this.server.to(this_user.socketId).emit('onMessage',
+					{
+						user: "Server",
+						message: "Wrong password",
+					});
+				}
+			}
+		}
+	}
+	
+
+
+
+	async ft_error_create_channel(body: any)
+	{
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		this.server.to(this_user.socketId).emit('onMessage',
+		{
+			user: "Server",
+			message: "Wrong format for new Channel. To create a channel with password:",
+		});
+		this.server.to(this_user.socketId).emit('onMessage',
+		{
+			user: "Server",
+			message: "/join [ServerName] password:[yourpassword] [public / private]",
+		});
+		this.server.to(this_user.socketId).emit('onMessage',
+		{
+			user: "Server",
+			message: "or withour password",
+		});
+		this.server.to(this_user.socketId).emit('onMessage',
+		{
+			user: "Server",
+			message: "/join [ServerName] noPassword [public / private]",
+		});
+		
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_________________________     ft_leave     _________________________
+	*/
+	
+	//This might not work, retest
+
+	async  ft_leave(body: any)
+	{
+
+		// 			 _____     Ver si el usuario está en un canal o no     _____
+
+		const isUserinJoinedChannel = await this.prisma.joinedChannels.findUnique
+		({
+			where:
+			{
+				idUser: body.userName,
+			},
+		});
+ 
+
+		// 			 _____     Si no está en ningún canal, busco el canal en el que está, guardo su nombre, le quito del canal, encuentro si hay más gente en ese canal y si no hay nadie más lo borro      _____
+
+		if (isUserinJoinedChannel)
+		{
+			const whichChannelUserIsIn = await this.prisma.joinedChannels.findFirst
+			({
+				where:
+				{
+					idUser: body.userName,
+				},
+			})
+			
+			await this.prisma.user.update
+			({
+				where:
+				{
+					login_42: body.userName
+				},
+				data:
+				{
+					channelRol: String("user"),
+				},
+			});
+
+			const channelName: string = whichChannelUserIsIn.idChannel;
+			const deleteUser = await this.prisma.joinedChannels.delete
+			({
+				where:
+				{
+					idUser: body.userName,
+				},
+			})
+			const allElements = await this.prisma.joinedChannels.findMany
+			({
+				where:
+				{
+					idChannel: channelName,
+				},
+			});
+			if (allElements.length === 0)
+			{
+				// 			 _____     borrar todos los baneados también     _____
+
+				const deleteMuted = await this.prisma.userMutedChannel.deleteMany
+				({
+					where:
+					{
+						idChannel: channelName,
+					},
+				})
+
+				const deleteBanned = await this.prisma.usersBannedChannel.deleteMany
+				({
+					where:
+					{
+						idChannel: channelName,
+					},
+				})
+
+				const whichChannel = await this.prisma.channel.delete
+				({
+					where:
+					{
+						Name: channelName,
+					},
+				})
+			}
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/*
 	**		_______________________     ft_list     _______________________
 	*/
 
 	async ft_list(body: any)
+	{
+		//              ______     buscar channels     ______
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		const all_channels = await this.prisma.channel.findMany
+		({
+			where:
+			{
+				isPrivate: false,
+			},
+		});
+		
+		this.server.to(this_user.socketId).emit('onMessage',
+		{
+			user: "",
+			message: "Channels:",
+		});
+		
+		for (const each_channel of all_channels)
+		{
+			this.server.to(this_user.socketId).emit('onMessage',
+			{
+				user: "",
+				message: ("-   " + each_channel.Name),
+				// message: ("-   " + each_channel.Name + each_channel.isPrivate),
+			});
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_______________________     ft_alllist     _______________________
+	*/
+
+	async ft_alllist(body: any)
 	{
 		//              ______     buscar channels     ______
 
@@ -645,10 +1191,462 @@ export class MyGateway
 			this.server.to(this_user.socketId).emit('onMessage',
 			{
 				user: "",
-				message: ("-   " + each_channel.Name),
+				message: ("-   " + each_channel.Name + each_channel.isPrivate),
 			});
 		}
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_______________________     ft_kick     _______________________
+	*/
+
+
+	async ft_kick(body: any)
+	{
+		const words = body.message.split(' ');
+
+
+		//              ______     Get users     ______
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		const to_kick_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: words[1],
+			},
+		});
+
+
+		//              ______     Get joinedChannels     ______
+
+
+		const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: words[1],
+			},
+		});
+		
+		const JoinedChannels_user_to_kick = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: body.userName,
+			},
+		});
+
+
+		//              ______     kick     ______
+
+
+		if (JoinedChannels_this_user && JoinedChannels_user_to_kick && 
+			(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_kick.idChannel)
+		{
+			const deleteJoinedChannel = await this.prisma.joinedChannels.delete
+			({
+				where:
+				{
+					idUser: words[1],
+				},
+			})
+			
+			this.server.to(this_user.socketId).emit('onMessage',
+			{
+				user: "Server",
+				message: "You kicked " + words[1],
+			});
+
+			this.server.to(to_kick_user.socketId).emit('onMessage',
+			{
+				user: "Server",
+				message: "You were kicked by " + this_user.login_42,
+			});
+
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_______________________     ft_ban     _______________________
+	*/
+
+
+	async ft_ban(body: any)
+	{
+		const words = body.message.split(' ');
+
+		
+		//              ______     Get users     ______
+		if (words[1])
+		{
+			const this_user = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					login_42: body.userName,
+				},
+			});
+
+			const to_kick_user = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					login_42: words[1],
+				},
+			});
+
+
+			//              ______     Get joinedChannels     ______
+
+			if (this_user && to_kick_user)
+			{
+				const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
+				({
+					where:
+					{
+						idUser: words[1],
+					},
+				});
+
+				const JoinedChannels_user_to_ban = await this.prisma.joinedChannels.findFirst
+				({
+					where:
+					{
+						idUser: body.userName,
+					},
+				});
+
+
+				//              ______     Ban     ______
+
+				if (JoinedChannels_this_user && JoinedChannels_user_to_ban && 
+					(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel)
+				{
+
+
+					//              ______     Delete JoinedChannels table      ______
+
+					const deleteJoinedChannel = await this.prisma.joinedChannels.delete
+					({
+						where:
+						{
+							idUser: words[1],
+						},
+					})
+
+
+					//              ______     Create banned table      ______
+
+					const UserBanned = await this.prisma.usersBannedChannel.create
+					({
+						data:
+						{
+							idUser: words[1],
+							idChannel: JoinedChannels_this_user.idChannel,
+						},
+					});
+
+
+					//              ______     Send Decorative Message      ______
+
+					this.server.to(this_user.socketId).emit('onMessage',
+					{
+						user: "Server",
+						message: "You banned " + words[1],
+					});
+
+					this.server.to(to_kick_user.socketId).emit('onMessage',
+					{
+						user: "Server",
+						message: "You were banned by " + this_user.login_42,
+					});
+
+				}
+			}
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_______________________     ft_mute     _______________________
+	*/
+
+
+	async ft_mute(body: any)
+	{
+		const words = body.message.split(' ');
+
+		
+		//              ______     Get users     ______
+
+		if (words[1] && words.length == 3 && /^\d+$/.test(words[2]))
+		{
+			
+			const this_user = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					login_42: body.userName,
+				},
+			});
+			
+			const to_kick_user = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					login_42: words[1],
+				},
+			});
+			
+			
+			//              ______     Get joinedChannels     ______
+			
+			if (this_user && to_kick_user)
+			{
+				const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
+				({
+					where:
+					{
+						idUser: words[1],
+					},
+				});
+
+				const JoinedChannels_user_to_ban = await this.prisma.joinedChannels.findFirst
+				({
+					where:
+					{
+						idUser: body.userName,
+					},
+				});
+
+
+				//              ______     Ban     ______
+
+				if (JoinedChannels_this_user && JoinedChannels_user_to_ban && 
+					(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel)
+				{
+
+					//              ______     Delete JoinedChannels table      ______
+
+					const deleteJoinedChannel = await this.prisma.joinedChannels.delete
+					({
+						where:
+						{
+							idUser: words[1],
+						},
+					})
+
+
+					//              ______     Create muted banned table      ______
+					
+					const ReleaseDate: Date = new Date();
+					ReleaseDate.setSeconds(ReleaseDate.getSeconds() + parseInt(words[2]));
+
+					const UserBanned = await this.prisma.userMutedChannel.create
+					({
+						data:
+						{
+							idUser: words[1],
+							idChannel: JoinedChannels_this_user.idChannel,
+							dateAllowedIn: ReleaseDate,
+						},
+					});
+
+					//              ______     Send Decorative Message      ______
+
+					this.server.to(this_user.socketId).emit('onMessage',
+					{
+						user: "Server",
+						message: "You muted " + words[1] + " for " + words[2] + " seconds.",
+					});
+
+					this.server.to(to_kick_user.socketId).emit('onMessage',
+					{
+						user: "Server",
+						message: "You were muted by " + this_user.login_42 + " for " + words[2] + " seconds.",
+					});
+
+				}
+			}
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_______________________     ft_giveAdmin     _______________________
+	*/
+
+
+	async ft_giveAdmin(body: any)
+	{
+		const words = body.message.split(' ');
+
+		
+		//              ______     Get users     ______
+		if (words[1])
+		{
+			const this_user = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					login_42: body.userName,
+				},
+			});
+
+			const to_admin_user = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					login_42: words[1],
+				},
+			});
+
+
+			//              ______     Get joinedChannels     ______
+
+			if (this_user && to_admin_user)
+			{
+				const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
+				({
+					where:
+					{
+						idUser: words[1],
+					},
+				});
+
+				const JoinedChannels_to_admin_user = await this.prisma.joinedChannels.findFirst
+				({
+					where:
+					{
+						idUser: body.userName,
+					},
+				});
+
+
+				//              ______     Give Admin     ______
+
+				if (JoinedChannels_this_user && JoinedChannels_to_admin_user && 
+					(this_user.channelRol == "owner") && JoinedChannels_this_user.idChannel == JoinedChannels_to_admin_user.idChannel)
+				{
+
+					await this.prisma.user.update
+					({
+						where:
+						{
+							login_42: to_admin_user.login_42,
+						},
+						data:
+						{
+							channelRol: String("admin"),
+						},
+					});
+		
+					
+
+					//              ______     Send Decorative Message      ______
+
+					this.server.to(this_user.socketId).emit('onMessage',
+					{
+						user: "Server",
+						message: "You made " + words[1] + " admin.",
+					});
+
+					this.server.to(to_admin_user.socketId).emit('onMessage',
+					{
+						user: "Server",
+						message: "You were made admin by " + this_user.login_42 + ". Congratulations!",
+					});
+
+				}
+			}
+		}
+	}
+
+
+
 
 
 
@@ -739,6 +1737,63 @@ export class MyGateway
 			}
 		}
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/*
 	**		_________________________     gameChanges     _________________________
