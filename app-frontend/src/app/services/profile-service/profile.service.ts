@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { io } from 'socket.io-client';
 
 export interface Profile {
   id: string;
@@ -24,6 +25,9 @@ export interface Match {
   providedIn: 'root'
 })
 export class ProfileService {
+
+  socket = io('http://' + window.location.host + ':3000');
+	userName = "";
 
   profile: BehaviorSubject<Profile>;
   constructor(private http: HttpClient, private domSanitizer: DomSanitizer)

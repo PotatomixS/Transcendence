@@ -1,5 +1,5 @@
 import { OnModuleInit } from '@nestjs/common';
-import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket} from 'socket.io';
 import { PrismaService } from "src/prisma/prisma.service";
 import { PrismaClient, Prisma } from '@prisma/client'
@@ -130,7 +130,31 @@ export class MyGateway
 
 
 
+	@SubscribeMessage('enterRoom')
+	onEnterRoom(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
+	{
+		const roomName = body.room_id;
 
+		this.server.to(socket.id).emit('InitSocketId', socket.id);
+
+		socket.join(roomName);
+
+		if (!gameRooms[roomName])
+		{
+			gameRooms[roomName] = new gameRoom(roomName, this.server);
+
+			socket.to(roomName).emit('onMessage',
+			{
+				user: "SERVER",
+				message: "Te has conectado a la sala " + roomName,
+			});
+		}
+		else if (gameRooms[roomName].getStatus() == false)
+		{
+			gameRooms[roomName].gameLoop();
+		}
+
+	}
 
 
 
@@ -1886,6 +1910,7 @@ export class MyGateway
 		// 	keysPressed[key.key] = true;
 		// else
 		// 	keysPressed[key.key] = false;
+		return;
 	}
 
 	// async gameLoop()
@@ -2002,21 +2027,6 @@ export class MyGateway
 	{
 		this.server.on('connection', (socket) =>
 		{
-			this.server.to(socket.id).emit('InitSocketId', socket.id);
-
-			socket.join("theRoom");
-			
-			gameRooms["theRoom"] = new gameRoom("theRoom", this.server, socket);
-			if (gameRooms["theRoom"].getStatus() == false)
-			{
-				socket.to("theRoom").emit('onMessage',
-				{
-					user: "USER",
-					message: "Roca",
-				});
-
-				gameRooms["theRoom"].gameLoop();
-			}
 		})
 	}
 }
@@ -2038,15 +2048,12 @@ class gameRoom
 
 	private server: Server;
 
-	private socket: Socket<any>; 
-
 	public gameStatus: boolean;
 
-	constructor (room: string, sv: Server, sk: Socket<any>)
+	constructor (room: string, sv: Server)
 	{
 		this.roomName = room;
 		this.server = sv;
-		this.socket = sk;
 		this.gameStatus = false;
 	}
 
@@ -2095,7 +2102,7 @@ class gameRoom
 				this.pos.player1_y = 405;
 				this.pos.player2_y = 405;
 			}
-			this.socket.to(this.roomName).emit('gameChanges', this.pos);
+			this.server.to(this.roomName).emit('gameChanges', this.pos);
 
 		}, 16);
 	}

@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { io } from 'socket.io-client';
 import { Profile, ProfileService } from '../profile-service/profile.service';
 import { Observable } from 'rxjs';
 
@@ -9,7 +8,7 @@ import { Observable } from 'rxjs';
 
 export class ChatService
 {
-	private	socket = io('http://' + window.location.host + ':3000');
+	private	socket;
 	public	userName = "";
 
 	sendMessage(message: string)
@@ -37,6 +36,7 @@ export class ChatService
 		{
 			this.userName = data.login_42;
 		});
+		this.socket = profileService.socket;
 	
 		this.socket.on('connect', () =>
 		{
