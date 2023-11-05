@@ -26,7 +26,7 @@ export interface Match {
 })
 export class ProfileService {
 
-  socket = io('http://' + window.location.host + ':3000');
+  socket: any;
 	userName = "";
 
   profile: BehaviorSubject<Profile>;
@@ -41,6 +41,18 @@ export class ProfileService {
       elo: 0,
       wins: 0,
       loses: 0
+    });
+  }
+
+  initSocket()
+  {
+    this.socket = io('http://' + window.location.host + ':3000');
+    this.socket.on('connect', () =>
+    {
+      this.socket.on('InitSocketId', () =>
+      {
+        this.socket.emit('newUserAndSocketId', {userName: this.profile.getValue().login_42});
+      });
     });
   }
 

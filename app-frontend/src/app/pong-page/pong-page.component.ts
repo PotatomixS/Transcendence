@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { ProfileService, Profile } from '../services/profile-service/profile.service';
 import { Observable } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-pong-page',
@@ -22,13 +23,15 @@ export class PongPageComponent implements OnInit
   private context: any;
   private drawNumbersArray: ((x: number, y: number) => void)[];
   private socket : any;
+  private watch : any;
 
   challenges: any[] = [];
 
   profile: Observable<Profile> = this.profileService.profile.asObservable();
 
-  constructor(private profileService: ProfileService)
+  constructor(private profileService: ProfileService, private aroute: ActivatedRoute)
   {
+    this.watch = this.aroute.snapshot.params["watch"];
     this.waiting = false;
     this.matchPlaying = false;
 
@@ -36,30 +39,37 @@ export class PongPageComponent implements OnInit
       this.draw2.bind(this), this.draw3.bind(this), this.draw4.bind(this),
       this.draw5.bind(this), this.draw6.bind(this), this.draw7.bind(this),
       this.draw8.bind(this), this.draw9.bind(this)];
-    this.socket = profileService.socket;
   }
       
   ngOnInit()
   {
-    this.profileService.getOnMatch().subscribe(res => {
-      this.match = res;
-
-      if (res?.response)
-        return;
-      else
-      {
-        if (res?.waiting == true)
-          this.waiting = true;
+    if (!this.watch)
+    {
+      this.profileService.getOnMatch().subscribe(res => {
+        this.match = res;
+  
+        if (res?.response)
+          return;
         else
         {
-          this.matchPlaying = true;
-          this.loadMatch();
+          if (res?.waiting == true)
+            this.waiting = true;
+          else
+          {
+            this.matchPlaying = true;
+            this.loadMatch();
+          }
         }
-      }
-    });
-    this.profileService.getChallenges().subscribe(challenges => {
-      this.challenges = challenges;
-    });
+      });
+      this.profileService.getChallenges().subscribe(challenges => {
+        this.challenges = challenges;
+      });
+    }
+    else
+    {
+      this.waiting = false;
+      this.matchPlaying = true;
+    }
   }
   
   ngAfterViewInit()
@@ -67,6 +77,13 @@ export class PongPageComponent implements OnInit
     this.canvasElement = document.getElementById("cv");
     this.context = this.gameCanvas.nativeElement.getContext("2d");
     this.context.fillStyle = "white";
+
+    if (this.watch)
+    {
+      this.profileService.socket.emit("enterRoom", {room_id: parseInt(this.watch)});
+
+      this.loadMatch();
+    }
   }
 
   cancelFind()
@@ -85,13 +102,13 @@ export class PongPageComponent implements OnInit
     {
       this.profileService.findMatch().subscribe(res => {
         this.match = res;
-        this.socket.emit("enterRoom", {room_id: this.match.id});
+        this.profileService.socket.emit("enterRoom", {room_id: this.match.id});
 
         if (res?.findingMatch == true)
         {
           this.waiting = true;
 
-          this.socket.on("StartMatch", () => {
+          this.profileService.socket.on("StartMatch", () => {
             this.waiting = false;
             this.matchPlaying = true;
             this.loadMatch();
@@ -107,7 +124,7 @@ export class PongPageComponent implements OnInit
     else
     {
       this.profileService.acceptChallenge(id).subscribe(res => {
-        this.socket.emit("enterRoom", {room_id: this.match.id});
+        this.profileService.socket.emit("enterRoom", {room_id: this.match.id});
         this.match = res;
 
         this.matchPlaying = true;
@@ -118,7 +135,7 @@ export class PongPageComponent implements OnInit
 
   loadMatch()
   {
-    this.socket.on("gameChanges", (data: any) =>
+    this.profileService.socket.on("gameChanges", (data: any) =>
     {
       this.context.clearRect
       (
@@ -131,13 +148,16 @@ export class PongPageComponent implements OnInit
       this.context.fillRect(data.player2_x, data.player2_y, 15, 70);
       this.context.fillRect(data.ball_x, data.ball_y, 20, 20)
       for(var i = 0; i < 960; i += 24)
+      {
         this.context.fillRect(635, i, 5, 10);
+      }
       this.drawPoints(data.player1_p, data.player2_p);
     })
   }
   
   drawPoints(points1: number, points2: number)
   {
+    
     if (points1 < 10)
       this.drawNumbersArray[points1](320, 40);
     else if (points1 >= 10)
@@ -231,19 +251,24 @@ export class PongPageComponent implements OnInit
   
   @HostListener('document:keydown', ['$event'])
   async onKeyDown(key: KeyboardEvent)
-  {  
+  {
+    if (!this.match)
+      return;
+
     if (key.key == "ArrowUp" || key.key == "ArrowDown")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: true, room_id: this.match.id});
+      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: true, room_id: this.match.id});
     if (key.key == "w" || key.key == "s")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: true, room_id: this.match.id});
+      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: true, room_id: this.match.id});
   }
 
   @HostListener('document:keyup', ['$event'])
   async onKeyUp(key: KeyboardEvent)
   {
+    if (!this.match)
+      return;
     if (key.key == "ArrowUp" || key.key == "ArrowDown")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: false, room_id: this.match.id});
+      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: false, room_id: this.match.id});
     if (key.key == "w" || key.key == "s")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: false, room_id: this.match.id});
+      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: false, room_id: this.match.id});
   }
 }

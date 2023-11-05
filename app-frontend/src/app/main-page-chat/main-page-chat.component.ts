@@ -33,6 +33,9 @@ export class MainPageChatComponent
 					case "Friend":
 						this.route.navigate(['/otherprofile', value.other.friend]);
 						break;
+					case "Spectate":
+						this.route.navigate(['/pong', value.other.match]);
+						break;
 				}
 			}
 			else

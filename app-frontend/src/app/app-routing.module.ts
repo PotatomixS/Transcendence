@@ -8,6 +8,7 @@ import { OtherProfilePageComponent } from './otherprofile-page/otherprofile-page
 const routes: Routes = [
   {path: 'profile', component: ProfilePageComponent},
   {path: 'pong', component: PongPageComponent},
+  {path: 'pong/:watch', component: PongPageComponent},
   {path: 'otherprofile/:login_42', component: OtherProfilePageComponent},
   {path: '', redirectTo: '/pong', pathMatch: 'full'},
 ];

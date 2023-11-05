@@ -70,6 +70,8 @@ export class AppComponent
 						this.service.logged.next(true);
 
 						this.ShowPage = true;
+						
+						this.profileService.initSocket();
 
 						if (response?.new)
 							this.route.navigate(['/profile'])

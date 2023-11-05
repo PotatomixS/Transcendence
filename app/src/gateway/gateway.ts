@@ -32,7 +32,6 @@ export class MyGateway
 
 	constructor( private prisma: PrismaService,	private config: ConfigService)
 	{
-		this.gameLoop();			
 	}
 	@WebSocketServer()
 	server: Server;
@@ -88,12 +87,6 @@ export class MyGateway
 		{
 			this.server.to(socket.id).emit('InitSocketId', socket.id);
 			console.log("Entra + " + socket.id);
-		
-			socket.on('disconnect', () =>
-			{
-				console.log("A user disconnected: " + socket.id);
-				this.ft_offline(socket.id);
-			});
 		});
 		
 	}
@@ -108,42 +101,51 @@ export class MyGateway
 			},
 		});
 
-		await this.prisma.user.update
-		({
-			where:
-			{
-				login_42: user.login_42,
-			},
-			data:
-			{
-				status: "offline",
-			},
-		});
+		if (user)
+		{
+			await this.prisma.user.update
+			({
+				where:
+				{
+					login_42: user.login_42,
+				},
+				data:
+				{
+					status: "offline",
+				},
+			});
+		}
 	}
 	
 	
 	@SubscribeMessage('newUserAndSocketId')
-	onNewUserAndSocketId(@MessageBody() body: any)
+	onNewUserAndSocketId(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
 	{
-		this.ft_get_user(body.userName, body.socketId);
+		this.ft_get_user(body.userName, socket.id);
+
+		socket.on('disconnect', () =>
+		{
+			console.log("A user disconnected: " + socket.id);
+			this.ft_offline(socket.id);
+		});
 	}
 
 	
 	
 	
-	async ft_get_user(userName: String, p_socketId: String)
+	async ft_get_user(userName: string, p_socketId: string)
 	{
 		const user = await this.prisma.user.findUnique
 		({
 			where: 
 			{
-				login_42: String(userName),
+				login_42: userName,
 			},
 		});
 		
 		if (user)
 		{
-			user.socketId = String(p_socketId);
+			user.socketId = p_socketId;
 			await this.prisma.user.update
 			({
 				where:
@@ -152,7 +154,7 @@ export class MyGateway
 				},
 				data:
 				{
-					socketId: String(p_socketId),
+					socketId: p_socketId,
 				},
 			});
 		}
@@ -172,9 +174,11 @@ export class MyGateway
 	@SubscribeMessage('enterRoom')
 	onEnterRoom(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
 	{
-		const roomName = body.room_id;
+		const roomName : string = body.room_id;
 
 		socket.join(roomName);
+
+		console.log(socket.rooms);
 
 		if (!gameRooms[roomName])
 		{
@@ -288,7 +292,7 @@ export class MyGateway
 		}
 		else if (words[0] == "/Spectate")
 		{
-			this.ft_spectate(body);
+			this.ft_spectate(body, socket);
 		}
 		else
 		{
@@ -1894,7 +1898,6 @@ export class MyGateway
 
 	async ft_listMatches(body: any)
 	{
-		
 	}
 
 
@@ -1921,10 +1924,26 @@ export class MyGateway
 	**		_________________________     ft_spectate     _________________________
 	*/
 
-	async ft_spectate(body: any)
+	async ft_spectate(body: any, socket: Socket)
 	{
+		const words = body.message.split(' ');
 
+		const room : string = words[1];
 
+		//TODO: haz seguridad
+		socket.join(room);
+
+		this.server.to(socket.id).emit('onMessage',
+		{
+			user: body.userName,
+			message: "",
+			other: 
+				{
+					command: "Spectate",
+					match: words[1]
+				},
+		});
+		this.server.to(socket.id).emit('StartMatch');
 	}
 
 
@@ -2260,7 +2279,6 @@ class gameRoom
 				this.pos.player2_y = 405;
 			}
 			this.server.to(this.roomName).emit('gameChanges', this.pos);
-
 		}, 16);
 	}
 
