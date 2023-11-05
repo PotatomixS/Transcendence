@@ -2199,16 +2199,18 @@ class gameRoom
 				if (this.pos.ball_x > 1280)
 					this.pos.player2_p += 1;
 				if (this.pos.player1_p > 9 || this.pos.player2_p > 9)
-				{
-					this.pos.player1_p = 0;
-					this.pos.player2_p = 0;
-				}
+					this.endGame();
 				this.initBall();
 				this.initWall()
 				this.initPlayers();
 			}
 			this.server.to(this.roomName).emit('gameChanges', this.pos);
 		}, 16);
+	}
+
+	endGame()
+	{
+		//TODO: guardar base de datos
 	}
 
 	hitboxCheck()
