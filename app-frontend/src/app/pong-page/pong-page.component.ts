@@ -53,7 +53,7 @@ export class PongPageComponent implements OnInit
         else
         {
           this.matchPlaying = true;
-          this.loadMatch(res.id);
+          this.loadMatch();
         }
       }
     });
@@ -91,7 +91,7 @@ export class PongPageComponent implements OnInit
         else
         {
           this.matchPlaying = true;
-          this.loadMatch(id);
+          this.loadMatch();
         }
       });
     }
@@ -101,14 +101,14 @@ export class PongPageComponent implements OnInit
         this.match = res;
 
         this.matchPlaying = true;
-        this.loadMatch(id);
+        this.loadMatch();
       });
     }
   }
 
-  loadMatch(room_id: number)
+  loadMatch()
   {
-    this.socket.emit("enterRoom", {room_id: room_id});
+    this.socket.emit("enterRoom", {room_id: this.match.id});
     this.socket.on("gameChanges", (data: any) =>
     {
       this.context.clearRect
@@ -224,17 +224,17 @@ export class PongPageComponent implements OnInit
   async onKeyDown(key: KeyboardEvent)
   {  
     if (key.key == "ArrowUp" || key.key == "ArrowDown")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: true});
+      this.socket.emit("keymapChanges", {key: key.key, keyStatus: true, room_id: this.match.id});
     if (key.key == "w" || key.key == "s")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: true});
+      this.socket.emit("keymapChanges", {key: key.key, keyStatus: true, room_id: this.match.id});
   }
 
   @HostListener('document:keyup', ['$event'])
   async onKeyUp(key: KeyboardEvent)
   {
     if (key.key == "ArrowUp" || key.key == "ArrowDown")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: false});
+      this.socket.emit("keymapChanges", {key: key.key, keyStatus: false, room_id: this.match.id});
     if (key.key == "w" || key.key == "s")
-      this.socket.emit("keymapChanges", {key: key.key, keyStatus: false});
+      this.socket.emit("keymapChanges", {key: key.key, keyStatus: false, room_id: this.match.id});
   }
 }

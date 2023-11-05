@@ -141,7 +141,7 @@ export class MyGateway
 
 		if (!gameRooms[roomName])
 		{
-			gameRooms[roomName] = new gameRoom(roomName, this.server);
+			gameRooms[roomName] = new gameRoom(roomName, this.server, socket.id);
 
 			socket.to(roomName).emit('onMessage',
 			{
@@ -151,7 +151,7 @@ export class MyGateway
 		}
 		else if (gameRooms[roomName].getStatus() == false)
 		{
-			gameRooms[roomName].gameLoop();
+			gameRooms[roomName].gameLoop(socket.id);
 		}
 
 	}
@@ -1904,12 +1904,23 @@ export class MyGateway
 	*/
 
 	@SubscribeMessage('keymapChanges')
-	onKeymapChanges(@MessageBody() key: {key: string, keyStatus: boolean})
+	onKeymapChanges(@MessageBody() key: {key: string, keyStatus: boolean, room_id: string}, @ConnectedSocket() socket: Socket)
 	{
-		// if (key.keyStatus == true)
-		// 	keysPressed[key.key] = true;
-		// else
-		// 	keysPressed[key.key] = false;
+		if (gameRooms[key.room_id].socketId1 == socket.id)
+		{
+			if (key.keyStatus == true)
+				gameRooms[key.room_id].keysPressed1[key.key] = true;
+			else
+				gameRooms[key.room_id].keysPressed1[key.key] = false;
+		}
+		if (gameRooms[key.room_id].socketId2 == socket.id)
+		{
+			if (key.keyStatus == true)
+				gameRooms[key.room_id].keysPressed2[key.key] = true;
+			else
+				gameRooms[key.room_id].keysPressed2[key.key] = false;
+		}
+		
 		return;
 	}
 
@@ -2042,7 +2053,8 @@ class gameRoom
 		ball_ang: 0
 	}
 
-	private keysPressed: { [key: string]: boolean } = {};
+	public keysPressed1: { [key: string]: boolean } = {};
+	public keysPressed2: { [key: string]: boolean } = {};
 
 	public roomName: string;
 
@@ -2050,10 +2062,15 @@ class gameRoom
 
 	public gameStatus: boolean;
 
-	constructor (room: string, sv: Server)
+	public socketId1;
+	public socketId2;
+
+	constructor (room: string, sv: Server, socketId1)
 	{
 		this.roomName = room;
 		this.server = sv;
+		this.socketId1 = socketId1;
+
 		this.gameStatus = false;
 	}
 
@@ -2062,8 +2079,9 @@ class gameRoom
 		return this.gameStatus;
 	}
 
-	async gameLoop()
+	async gameLoop(socketId2)
 	{
+		this.socketId2 = socketId2;
 		this.gameStatus = true;
 		let direccion = Math.floor(Math.random() * 1);
 
@@ -2141,25 +2159,25 @@ class gameRoom
 
 	playerMove()
 	{
-		if (this.keysPressed["w"])
+		if (this.keysPressed1["w"] || this.keysPressed1["ArrowUp"])
 		{
 			this.pos.player1_y -= 1;
 			if (this.pos.player1_y < 0)
 				this.pos.player1_y = 0;
 		}
-		if (this.keysPressed["s"])
+		if (this.keysPressed1["s"] || this.keysPressed1["ArrowDown"])
 		{
 			this.pos.player1_y += 1;
 			if (this.pos.player1_y > 890)
 				this.pos.player1_y = 890;
 		}
-		if (this.keysPressed["ArrowUp"])
+		if (this.keysPressed2["w"] || this.keysPressed2["ArrowUp"])
 		{
 			this.pos.player2_y -= 1;
 			if (this.pos.player2_y < 0)
 				this.pos.player2_y = 0;
 		}
-		if (this.keysPressed["ArrowDown"])
+		if (this.keysPressed2["s"] || this.keysPressed2["ArrowDown"])
 		{
 			this.pos.player2_y += 1;
 			if (this.pos.player2_y > 890)
