@@ -85,9 +85,18 @@ export class PongPageComponent implements OnInit
     {
       this.profileService.findMatch().subscribe(res => {
         this.match = res;
-        
+        this.socket.emit("enterRoom", {room_id: this.match.id});
+
         if (res?.findingMatch == true)
+        {
           this.waiting = true;
+
+          this.socket.on("StartMatch", () => {
+            this.waiting = false;
+            this.matchPlaying = true;
+            this.loadMatch();
+          });
+        }
         else
         {
           this.matchPlaying = true;
@@ -98,6 +107,7 @@ export class PongPageComponent implements OnInit
     else
     {
       this.profileService.acceptChallenge(id).subscribe(res => {
+        this.socket.emit("enterRoom", {room_id: this.match.id});
         this.match = res;
 
         this.matchPlaying = true;
@@ -108,7 +118,6 @@ export class PongPageComponent implements OnInit
 
   loadMatch()
   {
-    this.socket.emit("enterRoom", {room_id: this.match.id});
     this.socket.on("gameChanges", (data: any) =>
     {
       this.context.clearRect

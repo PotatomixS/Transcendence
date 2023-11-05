@@ -135,8 +135,6 @@ export class MyGateway
 	{
 		const roomName = body.room_id;
 
-		this.server.to(socket.id).emit('InitSocketId', socket.id);
-
 		socket.join(roomName);
 
 		if (!gameRooms[roomName])
@@ -2038,6 +2036,7 @@ export class MyGateway
 	{
 		this.server.on('connection', (socket) =>
 		{
+			this.server.to(socket.id).emit('InitSocketId', socket.id);
 		})
 	}
 }
@@ -2081,9 +2080,12 @@ class gameRoom
 
 	async gameLoop(socketId2)
 	{
+		this.server.to(this.roomName).emit('StartMatch');
+
 		this.socketId2 = socketId2;
 		this.gameStatus = true;
 		let direccion = Math.floor(Math.random() * 1);
+		let ballSpeed = 8;
 
 		if (direccion)
 			this.pos.ball_ang = Math.PI;
@@ -2095,8 +2097,8 @@ class gameRoom
 		{
 			let bounce : number | null;
 
-			this.pos.ball_x += Math.cos(this.pos.ball_ang) * 3;
-			this.pos.ball_y += Math.sin(this.pos.ball_ang) * -3;
+			this.pos.ball_x += Math.cos(this.pos.ball_ang) * ballSpeed;
+			this.pos.ball_y += Math.sin(this.pos.ball_ang) * -ballSpeed;
 			
 			if (this.pos.ball_x < 0 || this.pos.ball_x > 1280)
 			{
