@@ -182,7 +182,7 @@ export class MyGateway
 
 		if (!gameRooms[roomName])
 		{
-			gameRooms[roomName] = new gameRoom(roomName, this.server, socket.id);
+			gameRooms[roomName] = new gameRoom(roomName, this.server, socket.id, true);
 
 			socket.to(roomName).emit('onMessage',
 			{
@@ -2119,113 +2119,6 @@ export class MyGateway
 		
 		return;
 	}
-
-	// async gameLoop()
-	// {
-	// 	let direccion = Math.floor(Math.random() * 1);
-
-	// 	if (direccion)
-	// 		pos.ball_ang = Math.PI;
-	// 	else
-	// 		pos.ball_ang = 0;
-	// 		this.playerMove();
-	// 	setInterval(() => {this.playerMove()}, 4)
-	// 	setInterval(() => {pos.ball_ang = this.hitboxCheck(pos);}, 4)
-	// 	setInterval(() =>
-	// 	{
-	// 		let bounce : number | null;
-	// 		pos.ball_x += Math.cos(pos.ball_ang) * 3;
-	// 		pos.ball_y += Math.sin(pos.ball_ang) * -3;
-			
-	// 		if (pos.ball_x < 0 || pos.ball_x > 1280)
-	// 		{
-	// 			if (pos.ball_x < 0)
-	// 				pos.player1_p += 1;
-	// 			if (pos.ball_x > 1280)
-	// 				pos.player2_p += 1;
-	// 			if (pos.player1_p > 9 || pos.player2_p > 9)
-	// 			{
-	// 				pos.player1_p = 0;
-	// 				pos.player2_p = 0;
-	// 			}
-	// 			let direccion2 = Math.floor(Math.random() * 2);
-
-	// 			if (direccion2 == 1)
-	// 				pos.ball_ang = Math.PI;
-	// 			else
-	// 				pos.ball_ang = 0;
-	// 			pos.ball_x = 628;
-	// 			pos.ball_y = 430;
-	// 			pos.player1_y = 405;
-	// 			pos.player2_y = 405;
-	// 		}
-	// 		this.server.to("theRoom").emit('gameChanges', pos);
-	// 	}, 16);
-	// }
-
-	// hitboxCheck(data: any): number
-	// {
-	// 	if (((data.ball_x + 10) > data.player1_x && (data.ball_x + 10) < data.player1_x + 15) 
-	// 		&& ((data.ball_y + 10) > data.player1_y && (data.ball_y + 10) < data.player1_y + 70))
-	// 	{
-	// 		if (((data.player1_y - (data.ball_y + 10)) * -1) <= 20)
-	// 			return Math.PI * 0.25;
-	// 		if (((data.player1_y - (data.ball_y + 10)) * -1) > 20 && ((data.player1_y - (data.ball_y + 10)) * -1) <= 50)
-	// 			return Math.PI * 2;
-	// 		if (((data.player1_y - (data.ball_y + 10)) * -1) > 50)
-	// 			return Math.PI * 1.75;
-	// 	}
-	// 	if (((data.ball_x + 10) > data.player2_x && (data.ball_x + 10) < data.player2_x + 15) 
-	// 		&& ((data.ball_y + 10) > data.player2_y && (data.ball_y + 10) < data.player2_y + 70))
-	// 	{
-	// 		if (((data.player2_y - (data.ball_y + 10)) * -1) <= 20)
-	// 			return Math.PI * 0.75;
-	// 		if (((data.player2_y - (data.ball_y + 10)) * -1) > 20 && ((data.player2_y - (data.ball_y + 10)) * -1) <= 50)
-	// 			return Math.PI;
-	// 		if (((data.player2_y - (data.ball_y + 10)) * -1) > 50)
-	// 			return Math.PI * 1.25;
-	// 	}
-	// 	if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0.25))
-	// 		return Math.PI * 1.75;
-	// 	else if ((data.ball_y + 10) < 0 && data.ball_ang == (Math.PI * 0.75))
-	// 		return Math.PI * 1.25;
-	// 	else if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1.75))
-	// 		return Math.PI * 0.25;
-	// 	else if ((data.ball_y + 10) > 960 && data.ball_ang == (Math.PI * 1.25))
-	// 		return Math.PI * 0.75;
-	// 	return data.ball_ang;
-	// }
-
-	// playerMove()
-	// {
-	// 	if (keysPressed["w"])
-	// 	{
-	// 		pos.player1_y -= 1;
-	// 		if (pos.player1_y < 0)
-	// 			pos.player1_y = 0;
-	// 	}
-	// 	if (keysPressed["s"])
-	// 	{
-	// 		pos.player1_y += 1;
-	// 		if (pos.player1_y > 890)
-	// 			pos.player1_y = 890;
-	// 	}
-	// 	if (keysPressed["ArrowUp"])
-	// 	{
-	// 		pos.player2_y -= 1;
-	// 		if (pos.player2_y < 0)
-	// 			pos.player2_y = 0;
-	// 	}
-	// 	if (keysPressed["ArrowDown"])
-	// 	{
-	// 		pos.player2_y += 1;
-	// 		if (pos.player2_y > 890)
-	// 			pos.player2_y = 890;
-	// 	}
-	// }
-
-
-
 }
 
 class gameRoom
@@ -2233,10 +2126,14 @@ class gameRoom
 	private pos =
 	{
 		player1_x: 15, player1_y: 405,
+
 		player2_x: 1240, player2_y: 405,
+
 		player1_p: 0, player2_p: 0,
-		ball_x: 628, ball_y: 430,
-		ball_ang: 0
+
+		ball_x: 628, ball_y: 430, ball_ang: 0, ball_speed: 0,
+
+		wall_x: 628, wall_y: 430, wall_ang: (Math.PI / 2), wall_speed: 0, wall_status: false
 	}
 
 	public keysPressed1: { [key: string]: boolean } = {};
@@ -2251,13 +2148,13 @@ class gameRoom
 	public socketId1;
 	public socketId2;
 
-	constructor (room: string, sv: Server, socketId1)
+	constructor (room: string, sv: Server, socketId1, gameMod: boolean)
 	{
 		this.roomName = room;
 		this.server = sv;
 		this.socketId1 = socketId1;
-
 		this.gameStatus = false;
+		this.pos.wall_status = gameMod;
 	}
 
 	getStatus(): boolean
@@ -2271,21 +2168,29 @@ class gameRoom
 
 		this.socketId2 = socketId2;
 		this.gameStatus = true;
-		let direccion = Math.floor(Math.random() * 1);
-		let ballSpeed = 8;
-
-		if (direccion)
-			this.pos.ball_ang = Math.PI;
-		else
-			this.pos.ball_ang = 0;
+		this.pos.ball_speed = 8;
+		this.initWall()
+		this.initBall()
 		setInterval(() => {this.playerMove()}, 4)
 		setInterval(() => {this.hitboxCheck()}, 4)
 		setInterval(() =>
 		{
-			let bounce : number | null;
-
-			this.pos.ball_x += Math.cos(this.pos.ball_ang) * ballSpeed;
-			this.pos.ball_y += Math.sin(this.pos.ball_ang) * -ballSpeed;
+			this.pos.ball_x += Math.cos(this.pos.ball_ang) * this.pos.ball_speed;
+			this.pos.ball_y += Math.sin(this.pos.ball_ang) * -this.pos.ball_speed;
+			if (this.pos.wall_status == true)
+			{
+				this.pos.wall_y += Math.sin(this.pos.wall_ang) * -this.pos.ball_speed;
+				if (this.pos.wall_y < 0)
+				{
+					this.pos.wall_ang = Math.PI * 1.5;
+					this.pos.wall_speed = (Math.floor(Math.random() * 3) + 1);
+				}
+				else if (this.pos.wall_y > 820)
+				{
+					this.pos.wall_ang = Math.PI * 0.5;
+					this.pos.wall_speed = (Math.floor(Math.random() * 3) + 1);
+				}
+			}
 			
 			if (this.pos.ball_x < 0 || this.pos.ball_x > 1280)
 			{
@@ -2298,16 +2203,9 @@ class gameRoom
 					this.pos.player1_p = 0;
 					this.pos.player2_p = 0;
 				}
-				let direccion2 = Math.floor(Math.random() * 2);
-
-				if (direccion2 == 1)
-					this.pos.ball_ang = Math.PI;
-				else
-				this.pos.ball_ang = 0;
-				this.pos.ball_x = 628;
-				this.pos.ball_y = 430;
-				this.pos.player1_y = 405;
-				this.pos.player2_y = 405;
+				this.initBall();
+				this.initWall()
+				this.initPlayers();
 			}
 			this.server.to(this.roomName).emit('gameChanges', this.pos);
 		}, 16);
@@ -2334,6 +2232,29 @@ class gameRoom
 				this.pos.ball_ang = Math.PI;
 			if (((this.pos.player2_y - (this.pos.ball_y + 10)) * -1) > 50)
 				this.pos.ball_ang = Math.PI * 1.25;
+		}
+		if (this.pos.wall_status == true)
+		{
+			if (((this.pos.ball_x + 10) > this.pos.wall_x && (this.pos.ball_x + 10) < this.pos.wall_x + 7) 
+				&& ((this.pos.ball_y + 10) > this.pos.wall_y && (this.pos.ball_y + 10) < this.pos.wall_y + 140))
+			{
+				if (((this.pos.wall_y - (this.pos.ball_y + 10)) * -1) <= 50)
+					this.pos.ball_ang = Math.PI * 0.75;
+				else if (((this.pos.wall_y - (this.pos.ball_y + 10)) * -1) > 50 && ((this.pos.wall_y - (this.pos.ball_y + 10)) * -1) <= 90)
+					this.pos.ball_ang = Math.PI;
+				else if (((this.pos.wall_y - (this.pos.ball_y + 10)) * -1) > 90)
+					this.pos.ball_ang = Math.PI * 1.25;
+			}
+			else if (((this.pos.ball_x + 10) > this.pos.wall_x + 7 && (this.pos.ball_x + 10) < this.pos.wall_x + 15) 
+				&& ((this.pos.ball_y + 10) > this.pos.wall_y && (this.pos.ball_y + 10) < this.pos.wall_y + 140))
+			{
+				if (((this.pos.wall_y - (this.pos.ball_y + 10)) * -1) <= 50)
+					this.pos.ball_ang = Math.PI * 0.25;
+				else if (((this.pos.wall_y - (this.pos.ball_y + 10)) * -1) > 50 && ((this.pos.wall_y - (this.pos.ball_y + 10)) * -1) <= 90)
+					this.pos.ball_ang = 0;
+				else if (((this.pos.wall_y - (this.pos.ball_y + 10)) * -1) > 90)
+					this.pos.ball_ang = Math.PI * 1.75;
+			}
 		}
 		if ((this.pos.ball_y + 10) < 0 && this.pos.ball_ang == (Math.PI * 0.25))
 			this.pos.ball_ang = Math.PI * 1.75;
@@ -2371,5 +2292,68 @@ class gameRoom
 			if (this.pos.player2_y > 890)
 				this.pos.player2_y = 890;
 		}
+	}
+
+	initWall()
+	{
+		let position = Math.floor(Math.random() * 3);
+		let direction = Math.floor(Math.random() * 2);
+		let speed = (Math.floor(Math.random() * 3) + 1);
+
+		if (position == 0)
+			this.pos.wall_y = 0;
+		else if (position == 1)
+			this.pos.wall_y = 430;
+		else if (position == 2)
+			this.pos.wall_y = 940;
+
+		if(this.pos.wall_y == this.pos.ball_y)
+			this.initWall();
+		else
+		{
+			this.pos.wall_speed = speed;
+			if (direction == 0)
+				this.pos.wall_ang = Math.PI * 0.5;
+			else
+				this.pos.wall_ang = Math.PI * 1.50;
+		}
+	}
+
+	initBall()
+	{
+		let position = Math.floor(Math.random() * 3);
+		let direction = Math.floor(Math.random() * 2);
+
+		this.pos.ball_x = 628;
+		if (position == 0)
+		{
+			this.pos.ball_y = 0;
+			if (direction == 0)
+				this.pos.ball_ang = Math.PI * 1.75;
+			else
+				this.pos.ball_ang = Math.PI * 1.25;
+		}
+		else if (position == 1)
+		{
+			this.pos.ball_y = 430;
+			if (direction == 0)
+				this.pos.ball_ang = 0;
+			else
+				this.pos.ball_ang = Math.PI;
+		}
+		else if (position == 2)
+		{
+			this.pos.ball_y = 940;
+			if (direction == 0)
+				this.pos.ball_ang = Math.PI * 0.25;
+			else
+				this.pos.ball_ang = Math.PI * 0.75;
+		}	
+	}
+
+	initPlayers()
+	{
+		this.pos.player1_y = 405;
+		this.pos.player2_y = 405;
 	}
 }

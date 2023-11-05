@@ -144,6 +144,8 @@ export class PongPageComponent implements OnInit
         this.gameCanvas.nativeElement.width,
         this.gameCanvas.nativeElement.height
       );
+      if (data.wall_status == true)
+        this.context.fillRect(data.wall_x, data.wall_y, 15, 140);
       this.context.fillRect(data.player1_x, data.player1_y, 15, 70);
       this.context.fillRect(data.player2_x, data.player2_y, 15, 70);
       this.context.fillRect(data.ball_x, data.ball_y, 20, 20)
