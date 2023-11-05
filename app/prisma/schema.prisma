@@ -26,6 +26,8 @@ model User {
 
 	elo				Int			@default(500)
 
+	status			String		@default("online")						// offline / online / inGame
+
 	wins			matches[]	@relation("wins")
 	loses			matches[]	@relation("loses")
 
@@ -37,7 +39,7 @@ model User {
 	player2			gameRooms[]	@relation("player2")
 	// socket_id		Int
 
-	channelRol		String		@default("user")		// owner / admin / user
+	channelRol		String		@default("user")						// owner / admin / user
 }
 
 model Friends {
