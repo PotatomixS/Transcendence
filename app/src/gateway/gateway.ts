@@ -82,10 +82,42 @@ export class MyGateway
 		this.server.on('connection', (socket) =>
 		{
 			this.server.to(socket.id).emit('InitSocketId', socket.id);
-		})
+			console.log("Entra + " + socket.id);
+		
+			socket.on('disconnect', () =>
+			{
+				console.log("A user disconnected: " + socket.id);
+				// this.ft_offline(socket.id);
+				
+			});
+		});
+		
 	}
- 
-	
+
+	async ft_offline(id: string)
+	{
+		const user = await this.prisma.user.findFirst
+		({
+			where:
+			{
+				socketId: id,
+			},
+		});
+
+		await this.prisma.user.update
+		({
+			where:
+			{
+				login_42: user.login_42,
+			},
+			data:
+			{
+				status: "offline",
+			},
+		});
+	}
+
+
 	
 	
 	@SubscribeMessage('newUserAndSocketId')
@@ -218,11 +250,27 @@ export class MyGateway
 		{
 			this.ft_changePassword(body);
 		}
+		else if (words[0] == "/kick")
+		{
+			this.ft_kick(body);
+		}
+
+
+		//              ______     Game Commands     ______
+
+		else if (words[0] == "/listMatches")
+		{
+			this.ft_listMatches(body);
+		}
+		else if (words[0] == "/Spectate")
+		{
+			this.ft_spectate(body);
+		}
 		else
 		{
 			this.ft_send(body);
 		}
-		//profile
+
 	}
 
 
@@ -471,7 +519,7 @@ export class MyGateway
 
 		for (const each_friend of all_friends_when_I_am_User_1)
 		{
-			const user2print = await this.prisma.user.findUnique
+			const user2 = await this.prisma.user.findUnique
 			({
 				where:
 				{
@@ -482,13 +530,13 @@ export class MyGateway
 			this.server.to(my_user.socketId).emit('onMessage',
 			{
 				user: "",
-				message: ("1-   " + user2print.login_42 + " | " + each_friend.idUser1 + "  " +  each_friend.idUser2),
+				message: ("-   " + user2.login_42 + " [ " + user2.status +  " ]" ),
 			});
 		}
 
 		for (const each_friend of all_friends_when_I_am_User_2)
 		{
-			const user2print = await this.prisma.user.findUnique
+			const user1 = await this.prisma.user.findUnique
 			({
 				where:
 				{
@@ -499,10 +547,11 @@ export class MyGateway
 			this.server.to(my_user.socketId).emit('onMessage',
 			{
 				user: "",
-				message: ("2-   " + user2print.login_42 + " | " + each_friend.idUser1 + "  " +  each_friend.idUser2),
+				message: ("-   " + user1.login_42 + " [ " + user1.status +  " ]" ),
 			});
 		}
 	}
+
 
 
 
@@ -576,6 +625,8 @@ export class MyGateway
 	
 	async ft_join(body: any)
 	{
+		
+		const words = body.message.split(' ');
 
 		//              ______     Echar si ya está joineado     ______
 	
@@ -600,16 +651,15 @@ export class MyGateway
 			this.server.to(this_user.socketId).emit('onMessage',
 			{
 				user: "Server",
-				message: "You are alredy in a channel, joputa",
+				message: "You are alredy in a channel.",
 			});
 		}
 
 
-		if (!is_on_channel_alredy)
+		if (!is_on_channel_alredy && words[1])
 		{
 			//              ______     Busca  canales     ______
 
-			const words = body.message.split(' ');
 
 
 			const channel_exists = await this.prisma.channel.findFirst
@@ -902,22 +952,22 @@ export class MyGateway
 		this.server.to(this_user.socketId).emit('onMessage',
 		{
 			user: "Server",
-			message: "Wrong format for new Channel. To create a channel with password:",
+			message: "Wrong format for new Channel:",
 		});
 		this.server.to(this_user.socketId).emit('onMessage',
 		{
 			user: "Server",
-			message: "/join [ServerName] password:[yourpassword] [public / private]",
+			message: "/join [ChannelName] password:[urPass] [public / private]",
 		});
+		// this.server.to(this_user.socketId).emit('onMessage',
+		// {
+		// 	user: "Server",
+		// 	message: "or withour password",
+		// });
 		this.server.to(this_user.socketId).emit('onMessage',
 		{
 			user: "Server",
-			message: "or withour password",
-		});
-		this.server.to(this_user.socketId).emit('onMessage',
-		{
-			user: "Server",
-			message: "/join [ServerName] noPassword [public / private]",
+			message: "/join [ChannelName] noPassword [public / private]",
 		});
 		
 	}
@@ -1620,7 +1670,6 @@ export class MyGateway
 
 
 
-
 	/*
 	**		_________________________     ft_changePassword     _________________________
 	*/
@@ -1647,18 +1696,17 @@ export class MyGateway
 		({
 			where:
 			{
-				idUser: words[1],
+				idUser: this_user.login_42,
 			},
 		});
 
 
-		//              ______     kick     ______
+		//              ______     update pass     ______
 
+		const encryptedPassword = await this.encryptPassword(words[1]);
 
 		if (JoinedChannels_this_user && (this_user.channelRol == "owner"))
 		{
-
-			//update server pass
 
 			await this.prisma.channel.update
 			({
@@ -1668,15 +1716,14 @@ export class MyGateway
 				},
 				data:
 				{
-					//pene
-					// Password: String(p_socketId),
+					Password: encryptedPassword,
 				},
 			});
 
 			this.server.to(this_user.socketId).emit('onMessage',
 			{
 				user: "Server",
-				message: "You kicked " + words[1],
+				message: "You changed the Password",
 			});
 		}
 	}
@@ -1703,7 +1750,6 @@ export class MyGateway
 	/*
 	**		_________________________     ft_send     _________________________
 	*/
-
 
 	async ft_send(body: any)
 	{
@@ -1781,6 +1827,25 @@ export class MyGateway
 				}
 			}
 		}
+		else
+		{
+
+			const this_user = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					login_42: body.userName,
+				},
+			});
+
+			this.server.to(this_user.socketId).emit('onMessage',
+			{
+				user: "Server",
+				message: "You are not in a channel.",
+			});
+
+
+		}
 	}
 
 
@@ -1801,6 +1866,45 @@ export class MyGateway
 
 
 
+
+	/*
+	**		_________________________     ft_send     _________________________
+	*/
+
+	async ft_listMatches(body: any)
+	{
+		
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	**		_________________________     ft_spectate     _________________________
+	*/
+
+	async ft_spectate(body: any)
+	{
+
+
+	}
 
 
 
