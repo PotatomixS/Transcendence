@@ -203,9 +203,9 @@ export class MyGateway
 		{
 			this.ft_friends(body);
 		}
-		else if (words[0] == "/showprofile")
+		else if (words[0] == "/showProfile")
 		{
-			this.ft_showprofile(body);
+			this.ft_showProfile(body);
 		}
 
 		//              ______     Channels     ______
@@ -604,10 +604,10 @@ export class MyGateway
 
 
 	/*
-	**		_______________________     ft_showprofile     _______________________
+	**		_______________________     ft_showProfile     _______________________
 	*/
 
-	async ft_showprofile(body: any)
+	async ft_showProfile(body: any)
 	{
 		const words = body.message.split(' ');
 
@@ -643,7 +643,7 @@ export class MyGateway
 			}
 		}
 		else
-			this.ft_error(body, "/showprofile [User]");
+			this.ft_error(body, "/showProfile [User]");
 	}
 
 
@@ -993,19 +993,7 @@ export class MyGateway
 		this.server.to(this_user.socketId).emit('onMessage',
 		{
 			user: "Server",
-			message: "Wrong format for new Channel:",
-		});
-
-		this.server.to(this_user.socketId).emit('onMessage',
-		{
-			user: "Server",
-			message: "/join [ChannelName] password:[urPass] [public / private]",
-		});
-
-		this.server.to(this_user.socketId).emit('onMessage',
-		{
-			user: "Server",
-			message: "/join [ChannelName] noPassword [public / private]",
+			message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]",
 		});
 	}
 
