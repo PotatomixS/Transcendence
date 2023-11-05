@@ -5,8 +5,8 @@ WORKDIR /usr/frontend/src/app
 COPY package*.json ./
 
 RUN npm install
-RUN npm install -g @angular/cli
-RUN npm install socket.io-client
+#RUN npm install -g @angular/cli
+#RUN npm install socket.io-client
 
 COPY . .
 

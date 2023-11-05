@@ -105,6 +105,8 @@ model gameRooms {
 
 	waiting				Boolean
 	findingMatch		Boolean
+
+	modoDeJuego			String		@default("normal") //normal, pared
 }
 
 model viewers {
@@ -120,6 +122,6 @@ model matches {
 
 	idUsuarioVictoria	Int
 	idUsuarioDerrota	Int
-	modoDeJuego			String		//Normal, Modificado
+	modoDeJuego			String		@default("normal") //normal, pared
 	ranked				Boolean
 }

@@ -165,7 +165,7 @@ export class MyGateway
 	*/
 	
 	@SubscribeMessage('newMessage')
-	onNewMessage(@MessageBody() body: any)
+	onNewMessage(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
 	{
 		const msg: string = String(body.message);
 		const words = body.message.split(' ');
@@ -1904,14 +1904,14 @@ export class MyGateway
 	@SubscribeMessage('keymapChanges')
 	onKeymapChanges(@MessageBody() key: {key: string, keyStatus: boolean, room_id: string}, @ConnectedSocket() socket: Socket)
 	{
-		if (gameRooms[key.room_id].socketId1 == socket.id)
+		if (gameRooms[key.room_id]?.socketId1 == socket.id)
 		{
 			if (key.keyStatus == true)
 				gameRooms[key.room_id].keysPressed1[key.key] = true;
 			else
 				gameRooms[key.room_id].keysPressed1[key.key] = false;
 		}
-		if (gameRooms[key.room_id].socketId2 == socket.id)
+		if (gameRooms[key.room_id]?.socketId2 == socket.id)
 		{
 			if (key.keyStatus == true)
 				gameRooms[key.room_id].keysPressed2[key.key] = true;
