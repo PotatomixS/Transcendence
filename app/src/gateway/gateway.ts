@@ -7,6 +7,7 @@ import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
 import { ConfigService } from '@nestjs/config'
 import { map } from 'rxjs';
+import { UserService } from 'src/user/user.service';
 // import { Socket } from 'dgram';
 
 // var i = 0;
@@ -86,7 +87,6 @@ export class MyGateway
 		this.server.on('connection', (socket) =>
 		{
 			this.server.to(socket.id).emit('InitSocketId', socket.id);
-			console.log("Entra + " + socket.id);
 		});
 		
 	}
@@ -125,7 +125,6 @@ export class MyGateway
 
 		socket.on('disconnect', () =>
 		{
-			console.log("A user disconnected: " + socket.id);
 			this.ft_offline(socket.id);
 		});
 	}
@@ -174,15 +173,15 @@ export class MyGateway
 	@SubscribeMessage('enterRoom')
 	onEnterRoom(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
 	{
-		const roomName : string = body.room_id;
+		const user_id : number = body.user_id;
+		const roomName : string = body.room_id.toString();
 
 		socket.join(roomName);
 
-		console.log(socket.rooms);
-
 		if (!gameRooms[roomName])
 		{
-			gameRooms[roomName] = new gameRoom(roomName, this.server, socket.id, true);
+			const gameMode : boolean = body?.gameMode;
+			gameRooms[roomName] = new gameRoom(roomName, this.server, socket, user_id, gameMode, this);
 
 			socket.to(roomName).emit('onMessage',
 			{
@@ -192,8 +191,9 @@ export class MyGateway
 		}
 		else if (gameRooms[roomName].getStatus() == false)
 		{
-			gameRooms[roomName].gameLoop(socket.id);
+			gameRooms[roomName].gameLoop(socket, user_id);
 		}
+
 
 	}
 
@@ -286,9 +286,13 @@ export class MyGateway
 		{
 			this.ft_listMatches(body);
 		}
-		else if (words[0] == "/Spectate")
+		else if (words[0] == "/spectate")
 		{
 			this.ft_spectate(body, socket);
+		}
+		else if (words[0] == "/challenge")
+		{
+			this.ft_challenge(body, socket);
 		}
 		else
 		{
@@ -1942,12 +1946,33 @@ export class MyGateway
 
 	async ft_spectate(body: any, socket: Socket)
 	{
-		const words = body.message.split(' ');
+		const words : string[] = body.message.split(' ');
 
-		const room : string = words[1];
-
-		//TODO: haz seguridad
-		socket.join(room);
+		const matchExists = await this.prisma.gameRooms.findUnique({
+			where: {
+				id: parseInt(words[1])
+			}
+		})
+		
+		if (!matchExists)
+		{
+			this.server.to(socket.id).emit('onMessage',
+			{
+				user: "Server",
+				message: "No room found"
+			});
+			return;
+		}
+		
+		if (matchExists.waiting == true)
+		{
+			this.server.to(socket.id).emit('onMessage',
+			{
+				user: "Server",
+				message: "Match has not started yet"
+			});
+			return;
+		}
 
 		this.server.to(socket.id).emit('onMessage',
 		{
@@ -1959,7 +1984,101 @@ export class MyGateway
 					match: words[1]
 				},
 		});
-		this.server.to(socket.id).emit('StartMatch');
+	}
+
+	/*
+	**		_________________________     ft_challenge     _________________________
+	*/
+
+	async ft_challenge(body: any, socket: Socket)
+	{
+		const words = body.message.split(' ');
+
+		const my_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		if (words.length >= 2)
+		{
+			//comprobación previa
+			var alreadyOnMatch : boolean = false;
+			const matches = await this.prisma.gameRooms.findMany
+			({
+				where: {
+					idPlayerLeft: my_user.id
+				}
+			});
+
+			if (matches.length > 0)
+				alreadyOnMatch = true;
+
+			const matches2 = await this.prisma.gameRooms.findMany
+			({
+				where: {
+					idPlayerRight: my_user.id,
+					waiting: false
+				}
+			});
+
+			if (matches2.length > 0)
+				alreadyOnMatch = true;
+
+			if (alreadyOnMatch)
+			{
+				this.server.to(socket.id).emit('onMessage',
+				{
+					user: "Server",
+					message: "You are already on a match"
+				});
+				return;
+			}
+			//fin comprobación
+
+			const user_to_challenge = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					login_42: words[1],
+				},
+			});
+
+			if (!user_to_challenge)
+			{
+				this.ft_error(body, "/ft_challenge [User]");
+				return;
+			}
+
+			var gameMode = "normal";
+			if (words.length >= 3 && words[2] == "wall")
+				gameMode = "wall";
+
+			const game = await this.prisma.gameRooms.create({
+				data: {
+					idPlayerLeft: my_user.id,
+					idPlayerRight: user_to_challenge.id,
+					waiting: true,
+					findingMatch: false,
+					modoDeJuego: gameMode,
+					ranked: false
+				}
+			});
+
+			var roomName : string = game.id.toString();
+			socket.join(roomName);
+			gameRooms[roomName] = new gameRoom(roomName, this.server, socket, my_user.id, (gameMode == "wall"), this);
+
+			this.server.to(user_to_challenge.socketId).emit('onMessage',
+			{
+				user: user_to_challenge.nickname,
+				message: "You have been challenged by " + my_user.nickname
+			});
+		}
+		else
+			this.ft_error(body, "/ft_challenge [User] ?wall");
 	}
 
 
@@ -1982,6 +2101,64 @@ export class MyGateway
 			user: "Server",
 			message: err,
 		});
+	}
+
+	/*
+	**		_________________________     ft_challenge     _________________________
+	*/
+
+	async ft_finishGame(body: any)
+	{
+		const game = await this.prisma.gameRooms.findUnique({
+			where: {
+				id: body.id
+			}
+		})
+
+		if (!game)
+			return;
+
+		const gameDeletion = await this.prisma.gameRooms.delete({
+			where: {
+				id: game.id
+			}
+		})
+
+		const history = await this.prisma.matches.create({
+			data: {
+				idUsuarioVictoria: body.winnerId,
+				idUsuarioDerrota: body.looserId,
+				modoDeJuego: body.gameMode,
+				ranked: game.ranked
+			}
+		})
+
+		if (game.ranked == true)
+		{
+			const subir = await this.prisma.user.update({
+				where: {
+					id: body.winnerId
+				},
+				data: {
+					elo: {
+						increment: 10,
+					},
+				}
+			});
+
+			const bajar = await this.prisma.user.update({
+				where: {
+					id: body.looserId
+				},
+				data: {
+					elo: {
+						decrement: 8,
+					},
+				}
+			});
+		}
+
+		gameRooms.delete(body.roomName);
 	}
 
 
@@ -2100,16 +2277,16 @@ export class MyGateway
 	*/
 
 	@SubscribeMessage('keymapChanges')
-	onKeymapChanges(@MessageBody() key: {key: string, keyStatus: boolean, room_id: string}, @ConnectedSocket() socket: Socket)
+	onKeymapChanges(@MessageBody() key: {key: string, keyStatus: boolean, room_id: string, player_id: number})
 	{
-		if (gameRooms[key.room_id]?.socketId1 == socket.id)
+		if (gameRooms[key.room_id]?.idPlayer1 == key.player_id)
 		{
 			if (key.keyStatus == true)
 				gameRooms[key.room_id].keysPressed1[key.key] = true;
 			else
 				gameRooms[key.room_id].keysPressed1[key.key] = false;
 		}
-		if (gameRooms[key.room_id]?.socketId2 == socket.id)
+		if (gameRooms[key.room_id]?.idPlayer2 == key.player_id)
 		{
 			if (key.keyStatus == true)
 				gameRooms[key.room_id].keysPressed2[key.key] = true;
@@ -2145,16 +2322,24 @@ class gameRoom
 
 	public gameStatus: boolean;
 
-	public socketId1;
-	public socketId2;
+	public socket1 : Socket;
+	public socket2 : Socket;
 
-	constructor (room: string, sv: Server, socketId1, gameMod: boolean)
+	public idPlayer1 : number;
+	public idPlayer2 : number;
+
+	private gateway : MyGateway;
+
+	constructor (room: string, sv: Server, socket: Socket, idPlayer1: number, gameMode: boolean, gateway: MyGateway)
 	{
 		this.roomName = room;
 		this.server = sv;
-		this.socketId1 = socketId1;
+		this.idPlayer1 = idPlayer1;
+		this.socket1 = socket;
 		this.gameStatus = false;
-		this.pos.wall_status = gameMod;
+		this.pos.wall_status = gameMode;
+
+		this.gateway = gateway;
 	}
 
 	getStatus(): boolean
@@ -2162,11 +2347,12 @@ class gameRoom
 		return this.gameStatus;
 	}
 
-	async gameLoop(socketId2)
+	async gameLoop(socket : Socket, idPlayer2 : number)
 	{
 		this.server.to(this.roomName).emit('StartMatch');
 
-		this.socketId2 = socketId2;
+		this.socket2 = socket;
+		this.idPlayer2 = idPlayer2;
 		this.gameStatus = true;
 		this.pos.ball_speed = 8;
 		this.initWall()
@@ -2175,6 +2361,8 @@ class gameRoom
 		setInterval(() => {this.hitboxCheck()}, 4)
 		setInterval(() =>
 		{
+			if (this.gameStatus == false)
+				return;
 			this.pos.ball_x += Math.cos(this.pos.ball_ang) * this.pos.ball_speed;
 			this.pos.ball_y += Math.sin(this.pos.ball_ang) * -this.pos.ball_speed;
 			if (this.pos.wall_status == true)
@@ -2194,9 +2382,9 @@ class gameRoom
 			
 			if (this.pos.ball_x < 0 || this.pos.ball_x > 1280)
 			{
-				if (this.pos.ball_x < 0)
-					this.pos.player1_p += 1;
 				if (this.pos.ball_x > 1280)
+					this.pos.player1_p += 1;
+				if (this.pos.ball_x < 0)
 					this.pos.player2_p += 1;
 				if (this.pos.player1_p > 9 || this.pos.player2_p > 9)
 					this.endGame();
@@ -2210,11 +2398,28 @@ class gameRoom
 
 	endGame()
 	{
-		//TODO: guardar base de datos
+		this.gameStatus = false;
+		this.server.to(this.roomName).emit('gameFinished');
+
+		const winnerId = (this.pos.player1_p > 9) ? this.idPlayer1 : this.idPlayer2;
+		const looserId = (this.pos.player1_p > 9) ? this.idPlayer2 : this.idPlayer1;
+
+		this.socket1.leave(this.roomName);
+		this.socket2.leave(this.roomName);
+		
+		this.gateway.ft_finishGame({
+			id: parseInt(this.roomName),
+			winnerId: winnerId,
+			looserId: looserId,
+			gameMode: (this.pos.wall_status == true) ? "wall" : "normal"
+		});
 	}
 
 	hitboxCheck()
 	{
+		if (this.gameStatus == false)
+			return;
+
 		if (((this.pos.ball_x + 10) > this.pos.player1_x && (this.pos.ball_x + 10) < this.pos.player1_x + 15) 
 			&& ((this.pos.ball_y + 10) > this.pos.player1_y && (this.pos.ball_y + 10) < this.pos.player1_y + 70))
 		{
@@ -2270,6 +2475,8 @@ class gameRoom
 
 	playerMove()
 	{
+		if (this.gameStatus == false)
+			return;
 		if (this.keysPressed1["w"] || this.keysPressed1["ArrowUp"])
 		{
 			this.pos.player1_y -= 1;

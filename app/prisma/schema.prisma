@@ -108,7 +108,8 @@ model gameRooms {
 	waiting				Boolean
 	findingMatch		Boolean
 
-	modoDeJuego			String		@default("normal") //normal, pared
+	modoDeJuego			String		@default("normal") //normal, wall
+	ranked				Boolean
 }
 
 model viewers {

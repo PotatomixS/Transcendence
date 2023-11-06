@@ -43,6 +43,12 @@ export class PongPageComponent implements OnInit
       
   ngOnInit()
   {
+    this.profileService.socket.on("StartMatch", () => {
+      this.waiting = false;
+      this.matchPlaying = true;
+      this.loadMatch();
+    });
+
     if (!this.watch)
     {
       this.profileService.getOnMatch().subscribe(res => {
@@ -57,6 +63,10 @@ export class PongPageComponent implements OnInit
           else
           {
             this.matchPlaying = true;
+            this.profileService.socket.emit("enterRoom", {
+              user_id: this.profileService.profile.getValue().id,
+              room_id: res.id
+            });
             this.loadMatch();
           }
         }
@@ -64,11 +74,6 @@ export class PongPageComponent implements OnInit
       this.profileService.getChallenges().subscribe(challenges => {
         this.challenges = challenges;
       });
-    }
-    else
-    {
-      this.waiting = false;
-      this.matchPlaying = true;
     }
   }
   
@@ -80,7 +85,13 @@ export class PongPageComponent implements OnInit
 
     if (this.watch)
     {
-      this.profileService.socket.emit("enterRoom", {room_id: parseInt(this.watch)});
+      this.waiting = false;
+      this.matchPlaying = true;
+
+      this.profileService.socket.emit("enterRoom", {
+        user_id: this.profileService.profile.getValue().id,
+        room_id: parseInt(this.watch)
+      });
 
       this.loadMatch();
     }
@@ -102,17 +113,14 @@ export class PongPageComponent implements OnInit
     {
       this.profileService.findMatch().subscribe(res => {
         this.match = res;
-        this.profileService.socket.emit("enterRoom", {room_id: this.match.id});
+        this.profileService.socket.emit("enterRoom", {
+          user_id: this.profileService.profile.getValue().id,
+          room_id: this.match.id
+        });
 
         if (res?.findingMatch == true)
         {
           this.waiting = true;
-
-          this.profileService.socket.on("StartMatch", () => {
-            this.waiting = false;
-            this.matchPlaying = true;
-            this.loadMatch();
-          });
         }
         else
         {
@@ -124,7 +132,10 @@ export class PongPageComponent implements OnInit
     else
     {
       this.profileService.acceptChallenge(id).subscribe(res => {
-        this.profileService.socket.emit("enterRoom", {room_id: this.match.id});
+        this.profileService.socket.emit("enterRoom", {
+          user_id: this.profileService.profile.getValue().id,
+          room_id: id
+        });
         this.match = res;
 
         this.matchPlaying = true;
@@ -155,6 +166,15 @@ export class PongPageComponent implements OnInit
       }
       this.drawPoints(data.player1_p, data.player2_p);
     })
+
+    this.profileService.socket.on("gameFinished", () =>{
+      if (this.matchPlaying == true)
+      {
+        this.matchPlaying = false;
+        this.waiting = false;
+        alert("Game finished!");
+      }
+    });
   }
   
   drawPoints(points1: number, points2: number)
@@ -258,9 +278,9 @@ export class PongPageComponent implements OnInit
       return;
 
     if (key.key == "ArrowUp" || key.key == "ArrowDown")
-      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: true, room_id: this.match.id});
+      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: true, room_id: this.match.id, player_id: this.profileService.profile.getValue().id});
     if (key.key == "w" || key.key == "s")
-      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: true, room_id: this.match.id});
+      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: true, room_id: this.match.id, player_id: this.profileService.profile.getValue().id});
   }
 
   @HostListener('document:keyup', ['$event'])
@@ -269,8 +289,8 @@ export class PongPageComponent implements OnInit
     if (!this.match)
       return;
     if (key.key == "ArrowUp" || key.key == "ArrowDown")
-      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: false, room_id: this.match.id});
+      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: false, room_id: this.match.id, player_id: this.profileService.profile.getValue().id});
     if (key.key == "w" || key.key == "s")
-      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: false, room_id: this.match.id});
+      this.profileService.socket.emit("keymapChanges", {key: key.key, keyStatus: false, room_id: this.match.id, player_id: this.profileService.profile.getValue().id});
   }
 }

@@ -32,6 +32,7 @@ export class ProfilePageComponent implements OnInit {
 
   ngOnInit()
   {
+    this.service.getProfile();
     this.profile.subscribe(res => {
       this.profileForm.setValue({
         nickname: res.nickname,
@@ -41,6 +42,7 @@ export class ProfilePageComponent implements OnInit {
       this.matches = [];
 
       this.service.getProfileMatches(res.login_42).subscribe(list => {
+        this.matches = [];
         list.forEach( value =>
           {
             var matchInfo: Match = {
@@ -59,7 +61,7 @@ export class ProfilePageComponent implements OnInit {
               matchInfo.against = value.userWon.nickname;
               matchInfo.result = "Lost";
             }
-            this.matches.push(matchInfo);
+            this.matches.unshift(matchInfo);
           }
         ); 
       })

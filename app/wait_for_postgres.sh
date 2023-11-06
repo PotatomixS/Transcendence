@@ -8,3 +8,5 @@ done
 npx prisma migrate dev
 
 npm run start:dev
+
+#otro comando (borrar base de datos): npx prisma db push --force-reset

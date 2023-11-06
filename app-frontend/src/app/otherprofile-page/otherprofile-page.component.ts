@@ -73,7 +73,7 @@ export class OtherProfilePageComponent implements OnInit {
               matchInfo.against = value.userWon.nickname;
               matchInfo.result = "Lost";
             }
-            this.matches.push(matchInfo);
+            this.matches.unshift(matchInfo);
           }
         );
       });

@@ -332,9 +332,10 @@ export class UserService
 				data: 
 				{
 					idPlayerLeft: user.id,
-					idPlayerRight: user.id,	//TOFIX: no se como cambiar esto
+					idPlayerRight: user.id,
 					waiting: true,
-					findingMatch: true
+					findingMatch: true,
+					ranked: true
 				},
 			});
 		}
