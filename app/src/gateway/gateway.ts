@@ -183,7 +183,7 @@ export class MyGateway
 			const gameMode : boolean = body?.gameMode;
 			gameRooms[roomName] = new gameRoom(roomName, this.server, socket, user_id, gameMode, this);
 
-			socket.to(roomName).emit('onMessage',
+			this.server.to(socket.id).emit('onMessage',
 			{
 				user: "SERVER",
 				message: "Te has conectado a la sala " + roomName,
@@ -2070,6 +2070,8 @@ export class MyGateway
 			var roomName : string = game.id.toString();
 			socket.join(roomName);
 			gameRooms[roomName] = new gameRoom(roomName, this.server, socket, my_user.id, (gameMode == "wall"), this);
+
+			this.server.to(socket.id).emit('FindingMatch');
 
 			this.server.to(user_to_challenge.socketId).emit('onMessage',
 			{

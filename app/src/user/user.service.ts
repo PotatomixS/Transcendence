@@ -364,11 +364,22 @@ export class UserService
 	// _____    A C C E P T		C H A L L E N G E    ______
 	async acceptChallenge(str)
 	{
-		var room = await this.prisma.gameRooms.update
+		var room = await this.prisma.gameRooms.findUnique
 		({
 			where: 
 			{
 				id: str.room_id
+			}
+		});
+
+		if (!room)
+			return { error: "The challenge was cancelled."};
+
+		var updateRoom = await this.prisma.gameRooms.update
+		({
+			where: 
+			{
+				id: room.id
 			},
 			data:
 			{
@@ -378,7 +389,7 @@ export class UserService
 
 		//TODO: hacer lo que tenga que hacer para meter los dos sockets en la misma room
 
-		return room;
+		return updateRoom;
 	}
 
 	// _____    S E T	P R O F I L E	I N F O    ______

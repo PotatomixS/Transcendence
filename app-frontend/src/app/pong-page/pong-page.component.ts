@@ -49,6 +49,13 @@ export class PongPageComponent implements OnInit
       this.loadMatch();
     });
 
+    this.profileService.socket.on("FindingMatch", () => {
+      this.profileService.getOnMatch().subscribe(res => {
+        this.match = res;
+      });
+      this.waiting = true;
+    });
+
     if (!this.watch)
     {
       this.profileService.getOnMatch().subscribe(res => {
@@ -132,6 +139,14 @@ export class PongPageComponent implements OnInit
     else
     {
       this.profileService.acceptChallenge(id).subscribe(res => {
+        if (res?.error)
+        {
+          alert(res.error);
+          this.profileService.getChallenges().subscribe(challenges => {
+            this.challenges = challenges;
+          });
+          return;
+        }
         this.profileService.socket.emit("enterRoom", {
           user_id: this.profileService.profile.getValue().id,
           room_id: id
