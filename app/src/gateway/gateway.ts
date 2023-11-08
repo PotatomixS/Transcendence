@@ -8,21 +8,6 @@ import { promisify } from 'util';
 import { ConfigService } from '@nestjs/config'
 import { map } from 'rxjs';
 import { UserService } from 'src/user/user.service';
-// import { Socket } from 'dgram';
-
-// var i = 0;
-
-
-// var pos =
-// {
-// 	player1_x: 15, player1_y: 405,
-// 	player2_x: 1240, player2_y: 405,
-// 	player1_p: 0, player2_p: 0,
-// 	ball_x: 628, ball_y: 430,
-// 	ball_ang: 0
-// }
-
-// var keysPressed: { [key: string]: boolean } = {};
 
 var gameRooms: Map<string, gameRoom> = new Map<string, gameRoom>();
 
@@ -37,6 +22,129 @@ export class MyGateway
 	@WebSocketServer()
 	server: Server;
 
+	/*
+	**		___________________     Connection     ___________________
+	*/
+
+	onModuleInit()
+	{
+		this.server.on('connection', (socket) =>
+		{
+			this.server.to(socket.id).emit('InitSocketId', socket.id);
+		});
+	}
+	
+	/*
+	**		___________________     Events    ___________________
+	*/
+
+	@SubscribeMessage('newUserAndSocketId')
+	onNewUserAndSocketId(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
+	{
+		this.ft_new_user_connection(body.userName, socket.id);
+
+		socket.on('disconnect', () =>
+		{
+			this.ft_offline(body.userName);
+		});
+	}
+
+	@SubscribeMessage('enterRoom')
+	onEnterRoom(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
+	{
+		const user_id : number = body.user_id;
+		const roomName : string = body.room_id.toString();
+
+		socket.join(roomName);
+
+		if (!gameRooms[roomName])
+		{
+			const gameMode : boolean = body?.gameMode;
+			gameRooms[roomName] = new gameRoom(roomName, this.server, socket, user_id, gameMode, this);
+
+			this.server.to(socket.id).emit('onMessage',
+			{
+				user: "SERVER",
+				message: "Te has conectado a la sala " + roomName,
+			});
+		}
+		else if (gameRooms[roomName].getStatus() == false)
+			gameRooms[roomName].gameLoop(socket, user_id);
+	}
+
+	@SubscribeMessage('newMessage')
+	onNewMessage(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
+	{
+		const msg: string = String(body.message);
+		const words = body.message.split(' ');
+		
+		if (words[0] == "/dm")
+			this.ft_dm(body, socket);
+		else if (words[0] == "/block")
+			this.ft_block(body, socket);
+		else if (words[0] == "/unblock")
+			this.ft_unblock(body, socket);
+		else if (words[0] == "/friends")
+			this.ft_friends(body, socket);
+		else if (words[0] == "/showProfile")
+			this.ft_showProfile(body, socket);
+
+		//              ______     Channels     ______
+		else if (words[0] == "/join")
+			this.ft_join(body, socket);
+		else if (words[0] == "/leave")
+			this.ft_leave(body, socket);
+		else if (words[0] == "/list")
+			this.ft_list(body, socket);
+
+		//              ______     Admin commands     ______
+		else if (words[0] == "/kick")
+			this.ft_kick(body, socket);
+		else if (words[0] == "/ban")
+			this.ft_ban(body, socket);
+		else if (words[0] == "/mute")
+			this.ft_mute(body, socket);
+		else if (words[0] == "/giveAdmin")
+			this.ft_giveAdmin(body, socket);
+		else if (words[0] == "/changePassword")
+			this.ft_changePassword(body, socket);
+		else if (words[0] == "/kick")
+			this.ft_kick(body, socket);
+
+		//              ______     Game Commands     ______
+		else if (words[0] == "/listMatches")
+			this.ft_listMatches(body, socket);
+		else if (words[0] == "/spectate")
+			this.ft_spectate(body, socket);
+		else if (words[0] == "/challenge")
+			this.ft_challenge(body, socket);
+		else
+			this.ft_send(body, socket);
+	}
+
+	@SubscribeMessage('keymapChanges')
+	onKeymapChanges(@MessageBody() key: {key: string, keyStatus: boolean, room_id: string, player_id: number})
+	{
+		if (gameRooms[key.room_id]?.idPlayer1 == key.player_id)
+		{
+			if (key.keyStatus == true)
+				gameRooms[key.room_id].keysPressed1[key.key] = true;
+			else
+				gameRooms[key.room_id].keysPressed1[key.key] = false;
+		}
+		if (gameRooms[key.room_id]?.idPlayer2 == key.player_id)
+		{
+			if (key.keyStatus == true)
+				gameRooms[key.room_id].keysPressed2[key.key] = true;
+			else
+				gameRooms[key.room_id].keysPressed2[key.key] = false;
+		}
+		return;
+	}
+
+	/*
+	**		___________________     More functions    ___________________
+	*/
 	async encryptPassword(textToEncrypt: string) : Promise<Buffer>
 	{
 		if (textToEncrypt == "")
@@ -75,475 +183,311 @@ export class MyGateway
 		return decryptedText.toString();
 	}
 
-
-
-
-	/*
-	**		___________________     Get Socket at start     ___________________
-	*/
-
-	onModuleInit()
-	{
-		this.server.on('connection', (socket) =>
-		{
-			this.server.to(socket.id).emit('InitSocketId', socket.id);
-		});
-		
-	}
-
-	async ft_offline(id: string)
-	{
-		const user = await this.prisma.user.findFirst
-		({
-			where:
-			{
-				socketId: id,
-			},
-		});
-
-		if (user)
-		{
-			await this.prisma.user.update
-			({
-				where:
-				{
-					login_42: user.login_42,
-				},
-				data:
-				{
-					status: "offline",
-				},
-			});
-		}
-	}
-	
-	
-	@SubscribeMessage('newUserAndSocketId')
-	onNewUserAndSocketId(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
-	{
-		this.ft_get_user(body.userName, socket.id);
-
-		socket.on('disconnect', () =>
-		{
-			this.ft_offline(socket.id);
-		});
-	}
-
-	
-	
-	
-	async ft_get_user(userName: string, p_socketId: string)
+	async ft_new_user_connection(userName: string, p_socketId: string)
 	{
 		const user = await this.prisma.user.findUnique
 		({
 			where: 
 			{
+				login_42: userName
+			}
+		});
+		
+		if (!user)
+			return;
+
+		var status = "online";
+		if (user.status == "In game")
+			status = "In game";
+
+		await this.prisma.user.update
+		({
+			where:
+			{
+				id: user.id
+			},
+			data:
+			{
+				socketId: p_socketId,
+				status: status
+			}
+		});
+	}
+
+	async ft_offline(userName: string)
+	{
+		const user = await this.prisma.user.findFirst
+		({
+			where:
+			{
 				login_42: userName,
+			}
+		});
+
+		if (!user)
+			return;
+
+		var status = "offline";
+		if (user.status == "In game")
+			status = "In game";
+
+		await this.prisma.user.update
+		({
+			where:
+			{
+				login_42: user.login_42,
+			},
+			data:
+			{
+				socketId: "",
+				status: status
+			}
+		});
+	}
+
+	async ft_dm(body: any, socket: Socket)
+	{
+		//              ______     divide las palabras     ______
+		const words = body.message.split(' ');
+
+		if (words.length < 3)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/dm [User] [message]"
+			});
+			return;
+		}
+
+		const actual_message = words.slice(2).join(' ');
+
+		const dmTarget = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: String(words[1]),
+			},
+		});
+
+		if (!dmTarget)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "User not found"
+			});
+			return;
+		}
+
+		const isBlocked = await this.prisma.blockedUsers.findFirst
+		({
+			where:
+			{
+				userBlocked: String(dmTarget.login_42),
+				userBlocker: String(body.userName),
+			},
+		});
+
+		if (isBlocked)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You have this user blocked"
+			});
+			return;
+		}
+		
+		const urBlocked = await this.prisma.blockedUsers.findFirst
+		({
+			where:
+			{
+				userBlocked: String(body.userName),
+				userBlocker: String(dmTarget.login_42),
+			},
+		});
+
+		if (urBlocked)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "This user has blocked you"
+			});
+			return;
+		}
+
+		const sender = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		if (sender)
+		{
+			this.server.to(dmTarget.socketId).emit('onMessage',
+			{
+				user: sender.nickname,
+				message: "[private] " + actual_message,
+			});
+		}
+	}
+
+	async ft_block(body: any, socket: Socket)
+	{
+		//              ______     buscar persona a bloquear     ______
+
+		const words = body.message.split(' ');
+
+		if (words.length < 2)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/block [User]"
+			});
+			return;
+		}
+
+		const user2block = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: String(words[1]),
+			},
+		});
+
+		if (!user2block)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "User not found"
+			});
+			return;
+		}
+
+		if (user2block.login_42 == body.userName)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You can't block yourself"
+			});
+			return;
+		}
+
+		const blockNoExist = await this.prisma.blockedUsers.findFirst
+		({
+			where:
+			{
+				userBlocker: body.userName,
+				userBlocked: user2block.login_42,
+			},
+		});
+
+		if (blockNoExist)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "User was already blocked"
+			});
+			return;
+		}
+
+		//              ______     Meterla en la tabla de blocks     ______
+
+		await this.prisma.blockedUsers.create
+		({
+			data:
+			{
+				userBlocker: body.userName,
+				userBlocked: user2block.login_42,
 			},
 		});
 		
-		if (user)
-		{
-			user.socketId = p_socketId;
-			await this.prisma.user.update
-			({
-				where:
-				{
-					id: user.id
-				},
-				data:
-				{
-					socketId: p_socketId,
-				},
-			});
-		}
+		this.server.to(socket.id).emit('onMessage', {
+			user: 'Server',
+			message: "User " + user2block.nickname + " successfully blocked"
+		});
+		return;
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-	@SubscribeMessage('enterRoom')
-	onEnterRoom(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
-	{
-		const user_id : number = body.user_id;
-		const roomName : string = body.room_id.toString();
-
-		socket.join(roomName);
-
-		if (!gameRooms[roomName])
-		{
-			const gameMode : boolean = body?.gameMode;
-			gameRooms[roomName] = new gameRoom(roomName, this.server, socket, user_id, gameMode, this);
-
-			this.server.to(socket.id).emit('onMessage',
-			{
-				user: "SERVER",
-				message: "Te has conectado a la sala " + roomName,
-			});
-		}
-		else if (gameRooms[roomName].getStatus() == false)
-		{
-			gameRooms[roomName].gameLoop(socket, user_id);
-		}
-
-
-	}
-
-
-
-
-
-
-
-	/*
-	**		______________     Receive and distribute a message     ______________
-	*/
-	
-	@SubscribeMessage('newMessage')
-	onNewMessage(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
-	{
-		const msg: string = String(body.message);
-		const words = body.message.split(' ');
-		
-		//              ______     DMs     ______
-		
-		if (words[0] == "/dm")
-		{
-			this.ft_dm(body);
-		}
-		else if (words[0] == "/block")
-		{
-			this.ft_block(body);
-		}
-		else if (words[0] == "/unblock")
-		{
-			this.ft_unblock(body);
-		}
-		else if (words[0] == "/friends")
-		{
-			this.ft_friends(body);
-		}
-		else if (words[0] == "/showProfile")
-		{
-			this.ft_showProfile(body);
-		}
-
-		//              ______     Channels     ______
-
-		else if (words[0] == "/join")
-		{
-			this.ft_join(body);
-		}
-		else if (words[0] == "/leave")
-		{
-			this.ft_leave(body);
-		}
-		else if (words[0] == "/list")
-		{
-			this.ft_list(body);
-		}
-		
-
-		//              ______     Admin commands     ______
-
-		else if (words[0] == "/kick")
-		{
-			this.ft_kick(body);
-		}
-		else if (words[0] == "/ban")
-		{
-			this.ft_ban(body);
-		}
-		else if (words[0] == "/mute")
-		{
-			this.ft_mute(body);
-		}
-		else if (words[0] == "/giveAdmin")
-		{
-			this.ft_giveAdmin(body);
-		}
-		else if (words[0] == "/changePassword")
-		{
-			this.ft_changePassword(body);
-		}
-		else if (words[0] == "/kick")
-		{
-			this.ft_kick(body);
-		}
-
-
-		//              ______     Game Commands     ______
-
-		else if (words[0] == "/listMatches")
-		{
-			this.ft_listMatches(body);
-		}
-		else if (words[0] == "/spectate")
-		{
-			this.ft_spectate(body, socket);
-		}
-		else if (words[0] == "/challenge")
-		{
-			this.ft_challenge(body, socket);
-		}
-		else
-		{
-			this.ft_send(body);
-		}
-
-	}
-
-
-
-
-
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_________________________     ft_dm     _________________________
-	*/
-
-	async ft_dm(body: any)
-	{
-
-		//              ______     divide las palabras     ______
-
-		const words = body.message.split(' ');
-
-		if (words.length >= 3)
-		{
-			const actual_message = words.slice(2).join(' ');
-
-			const user = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: String(words[1]),
-				},
-			});
-
-			if (user)
-			{
-				const isBlocked = await this.prisma.blockedUsers.findFirst
-				({
-					where:
-					{
-						userBlocked: String(user.login_42),
-						userBlocker: String(body.userName),
-					},
-				});
-				
-				const urBlocked = await this.prisma.blockedUsers.findFirst
-				({
-					where:
-					{
-						userBlocked: String(body.userName),
-						userBlocker: String(user.login_42),
-					},
-				});
-
-				const USERNICKNAME = await this.prisma.user.findUnique
-				({
-					where:
-					{
-						login_42: body.userName,
-					},
-				});
-
-				if (user && USERNICKNAME && !isBlocked && !urBlocked)
-				{
-					this.server.to(user.socketId).emit('onMessage',
-					{
-		//				user: body.userName,
-						user: USERNICKNAME.nickname,
-
-						message: "[private] " + actual_message,
-					});
-				}
-			}
-		}
-		else
-			this.ft_error(body, "/dm [User] [message]");
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_______________________     ft_block     _______________________
-	*/
-
-	async ft_block(body: any)
+	async ft_unblock(body: any, socket: Socket)
 	{
 		//              ______     buscar persona a bloquear     ______
 
 		const words = body.message.split(' ');
 
-		if (words.length == 2)
+		if (words.length < 2)
 		{
-			const user2block = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: String(words[1]),
-				},
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/unblock [User]"
 			});
-
-			const blockNoExist = await this.prisma.blockedUsers.findFirst
-			({
-				where:
-				{
-					userBlocker: body.userName,
-					userBlocked: words[1],
-				},
-			});
-
-
-			//              ______     Meterla en la tabla de blocks     ______
-
-			if (user2block && user2block.login_42 != body.userName && !blockNoExist)
-			{
-				await this.prisma.blockedUsers.create
-				({
-					data:
-					{
-						userBlocker: body.userName,
-						userBlocked: words[1],
-					},
-				});
-			}
+			return;
 		}
-		else
-			this.ft_error(body, "/block [User]");
-	}
 
+		const user2unblock = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: String(words[1]),
+			},
+		});
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_______________________     ft_unblock     _______________________
-	*/
-
-	async ft_unblock(body: any)
-	{
-		//              ______     buscar persona a bloquear     ______
-
-		const words = body.message.split(' ');
-
-		if (words.length == 2)
+		if (!user2unblock)
 		{
-			const user2unblock = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: String(words[1]),
-				},
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "User not found"
 			});
-
-			//              ______     Meterla en la tabla de blocks     ______
-			if (user2unblock)
-			{
-				const toUnBlockTable = await this.prisma.blockedUsers.findFirst
-				({
-					where:
-					{
-						userBlocker: body.userName,
-						userBlocked: words[1],
-					},
-				});
-
-				const blockCard = await this.prisma.blockedUsers.delete
-				({
-					where:
-					{
-						id: toUnBlockTable.id,
-					},
-				});
-			}
+			return;
 		}
-		else
-			this.ft_error(body, "/unblock [User]");
+
+		if (user2unblock.login_42 == body.userName)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You can't unblock yourself"
+			});
+			return;
+		}
+
+		//              ______     Meterla en la tabla de blocks     ______
+		const toUnBlockTable = await this.prisma.blockedUsers.findFirst
+		({
+			where:
+			{
+				userBlocker: body.userName,
+				userBlocked: user2unblock.login_42,
+			}
+		});
+
+		if (!toUnBlockTable)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "User was not blocked"
+			});
+			return;
+		}
+
+		await this.prisma.blockedUsers.delete
+		({
+			where:
+			{
+				id: toUnBlockTable.id,
+			}
+		});
+
+		this.server.to(socket.id).emit('onMessage', {
+			user: 'Server',
+			message: "User successfully unblocked"
+		});
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	/*
 	**		_______________________     ft_friends     _______________________
 	*/
 
-	async ft_friends(body: any)
+	async ft_friends(body: any, socket: Socket)
 	{
 		//              ______     buscar tu persona     ______
 
@@ -554,6 +498,15 @@ export class MyGateway
 				login_42: body.userName,
 			},
 		});
+
+		if (!my_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't exist, for some reason"
+			});
+			return;
+		}
 
 
 		//              ______  Mostrar tus friends cuando eres 1   ______
@@ -593,7 +546,7 @@ export class MyGateway
 			this.server.to(my_user.socketId).emit('onMessage',
 			{
 				user: "",
-				message: ("-   " + user2.login_42 + " [ " + user2.status +  " ]" ),
+				message: ("-   " + user2.nickname + " [ " + user2.status +  " ]" ),
 			});
 		}
 
@@ -610,35 +563,12 @@ export class MyGateway
 			this.server.to(my_user.socketId).emit('onMessage',
 			{
 				user: "",
-				message: ("-   " + user1.login_42 + " [ " + user1.status +  " ]" ),
+				message: ("-   " + user1.nickname + " [ " + user1.status +  " ]" ),
 			});
 		}
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_______________________     ft_showProfile     _______________________
-	*/
-
-	async ft_showProfile(body: any)
+	async ft_showProfile(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
 
@@ -674,33 +604,13 @@ export class MyGateway
 			}
 		}
 		else
-			this.ft_error(body, "/showProfile [User]");
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/showProfile [User]"
+			})
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_________________________     ft_join     _________________________
-	*/
-	
-	async ft_join(body: any)
+	async ft_join(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
 
@@ -823,7 +733,10 @@ export class MyGateway
 			{
 				if (words.length != 4)
 				{
-					this.ft_error_create_channel(body);
+					this.server.to(socket.id).emit('onMessage', {
+						user: 'Server',
+						message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
+					})
 				}
 				else
 				{
@@ -863,7 +776,10 @@ export class MyGateway
 					}
 					else
 					{
-						this.ft_error_create_channel(body);
+						this.server.to(socket.id).emit('onMessage', {
+							user: 'Server',
+							message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
+						})
 					}
 
 
@@ -921,7 +837,10 @@ export class MyGateway
 					}
 					else
 					{
-						this.ft_error_create_channel(body);
+						this.server.to(socket.id).emit('onMessage', {
+							user: 'Server',
+							message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
+						})
 					}
 
 
@@ -1004,54 +923,14 @@ export class MyGateway
 		}
 		else if (!words[1])
 		{
-			this.ft_error_create_channel(body);
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
+			})
 		}
 	}
-
-
-
-
-	async ft_error_create_channel(body: any)
-	{
-		const this_user = await this.prisma.user.findUnique
-		({
-			where:
-			{
-				login_42: body.userName,
-			},
-		});
-
-		this.server.to(this_user.socketId).emit('onMessage',
-		{
-			user: "Server",
-			message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]",
-		});
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_________________________     ft_leave     _________________________
-	*/
 	
-	async  ft_leave(body: any)
+	async  ft_leave(body: any, socket: Socket)
 	{
 
 		// 			 _____     Ver si el usuario está en un canal o no     _____
@@ -1134,34 +1013,13 @@ export class MyGateway
 			}
 		}
 		else
-			this.ft_error(body, "You are not in a channel");
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You are not in a channel"
+			})
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_______________________     ft_list     _______________________
-	*/
-
-	async ft_list(body: any)
+	async ft_list(body: any, socket: Socket)
 	{
 		//              ______     buscar channels     ______
 
@@ -1197,31 +1055,7 @@ export class MyGateway
 		}
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_______________________     ft_kick     _______________________
-	*/
-
-
-	async ft_kick(body: any)
+	async ft_kick(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
 
@@ -1295,33 +1129,13 @@ export class MyGateway
 			}
 		}
 		else
-			this.ft_error(body, "/kick [user]");
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/kick [user]"
+			})
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_______________________     ft_ban     _______________________
-	*/
-
-	async ft_ban(body: any)
+	async ft_ban(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
 
@@ -1429,35 +1243,13 @@ export class MyGateway
 			}
 		}
 		else
-			this.ft_error(body, "/ban [user]");
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/ban [user]"
+			})
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_______________________     ft_mute     _______________________
-	*/
-
-
-	async ft_mute(body: any)
+	async ft_mute(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
 
@@ -1558,34 +1350,13 @@ export class MyGateway
 			}
 		}
 		else
-			this.ft_error(body, "/mute [user] [time]");
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/mute [user] [time]"
+			})
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_______________________     ft_giveAdmin     _______________________
-	*/
-
-
-	async ft_giveAdmin(body: any)
+	async ft_giveAdmin(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
 
@@ -1670,31 +1441,13 @@ export class MyGateway
 			}
 		}
 		else
-			this.ft_error(body, "/giveAdmin [User]");
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/giveAdmin [User]"
+			})
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_________________________     ft_changePassword     _________________________
-	*/
-
-	async ft_changePassword(body: any)
+	async ft_changePassword(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
 
@@ -1748,33 +1501,13 @@ export class MyGateway
 			}
 		}
 		else
-			this.ft_error(body, "/changePassword [User]");
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/changePassword [User]"
+			})
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_________________________     ft_send     _________________________
-	*/
-
-	async ft_send(body: any)
+	async ft_send(body: any, socket: Socket)
 	{
 		//       ______     Encuentra el canal en el que está el user que envía     ______
 		
@@ -1852,33 +1585,13 @@ export class MyGateway
 			}
 		}
 		else
-			this.ft_error(body, "You are not in a channel");
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You are not in a channel"
+			})
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_________________________     ft_listMatches     _________________________
-	*/
-
-	async ft_listMatches(body: any)
+	async ft_listMatches(body: any, socket: Socket)
 	{
 
 		const words = body.message.split(' ');
@@ -1922,27 +1635,11 @@ export class MyGateway
 			}
 		}
 		else
-			this.ft_error(body, "/listMatches");
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/listMatches"
+			})
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_________________________     ft_spectate     _________________________
-	*/
 
 	async ft_spectate(body: any, socket: Socket)
 	{
@@ -1985,10 +1682,6 @@ export class MyGateway
 				},
 		});
 	}
-
-	/*
-	**		_________________________     ft_challenge     _________________________
-	*/
 
 	async ft_challenge(body: any, socket: Socket)
 	{
@@ -2048,7 +1741,10 @@ export class MyGateway
 
 			if (!user_to_challenge)
 			{
-				this.ft_error(body, "/ft_challenge [User]");
+				this.server.to(socket.id).emit('onMessage', {
+					user: 'Server',
+					message: "/ft_challenge [User]"
+				})
 				return;
 			}
 
@@ -2080,34 +1776,11 @@ export class MyGateway
 			});
 		}
 		else
-			this.ft_error(body, "/ft_challenge [User] ?wall");
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/ft_challenge [User] ?wall"
+			})
 	}
-
-
-
-
-
-
-	async ft_error(body: any, err: String)
-	{
-		const my_user = await this.prisma.user.findUnique
-		({
-			where:
-			{
-				login_42: body.userName,
-			},
-		});
-
-		this.server.to(my_user.socketId).emit('onMessage',
-		{
-			user: "Server",
-			message: err,
-		});
-	}
-
-	/*
-	**		_________________________     ft_challenge     _________________________
-	*/
 
 	async ft_finishGame(body: any)
 	{
@@ -2120,16 +1793,37 @@ export class MyGateway
 		if (!game)
 			return;
 
-		const gameDeletion = await this.prisma.gameRooms.delete({
+		const winner = await this.prisma.user.findUnique({
+			where: {
+				id: body.winnerId
+			}
+		})
+
+		if (!winner)
+			return;
+
+		const looser = await this.prisma.user.findUnique({
+			where: {
+				id: body.looserId
+			}
+		})
+
+		if (!looser)
+			return;
+
+
+		//remove active game
+		await this.prisma.gameRooms.delete({
 			where: {
 				id: game.id
 			}
 		})
 
-		const history = await this.prisma.matches.create({
+		//create history
+		await this.prisma.matches.create({
 			data: {
-				idUsuarioVictoria: body.winnerId,
-				idUsuarioDerrota: body.looserId,
+				idUsuarioVictoria: winner.id,
+				idUsuarioDerrota: looser.id,
 				modoDeJuego: body.gameMode,
 				ranked: game.ranked
 			}
@@ -2137,22 +1831,28 @@ export class MyGateway
 
 		if (game.ranked == true)
 		{
-			const subir = await this.prisma.user.update({
+			//subir ganador
+			var status = (winner.socketId != "") ? "online" : "offline";
+			await this.prisma.user.update({
 				where: {
 					id: body.winnerId
 				},
 				data: {
+					status: status,
 					elo: {
 						increment: 10,
 					},
 				}
 			});
-
-			const bajar = await this.prisma.user.update({
+			
+			//bajar perdedor
+			status = (looser.socketId != "") ? "online" : "offline";
+			await this.prisma.user.update({
 				where: {
 					id: body.looserId
 				},
 				data: {
+					status: status,
 					elo: {
 						decrement: 8,
 					},
@@ -2162,143 +1862,11 @@ export class MyGateway
 
 		gameRooms.delete(body.roomName);
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	**		_________________________     gameChanges     _________________________
-	*/
-
-	@SubscribeMessage('keymapChanges')
-	onKeymapChanges(@MessageBody() key: {key: string, keyStatus: boolean, room_id: string, player_id: number})
-	{
-		if (gameRooms[key.room_id]?.idPlayer1 == key.player_id)
-		{
-			if (key.keyStatus == true)
-				gameRooms[key.room_id].keysPressed1[key.key] = true;
-			else
-				gameRooms[key.room_id].keysPressed1[key.key] = false;
-		}
-		if (gameRooms[key.room_id]?.idPlayer2 == key.player_id)
-		{
-			if (key.keyStatus == true)
-				gameRooms[key.room_id].keysPressed2[key.key] = true;
-			else
-				gameRooms[key.room_id].keysPressed2[key.key] = false;
-		}
-		
-		return;
-	}
 }
+
+/*
+**		_________________________     other classes and functions     _________________________
+*/
 
 class gameRoom
 {

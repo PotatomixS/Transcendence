@@ -352,10 +352,32 @@ export class UserService
 					findingMatch: false
 				},
 			});
+
+			//update player status
+			await this.prisma.user.update
+			({
+				where: 
+				{
+					id: room.idPlayerLeft
+				},
+				data:
+				{
+					status: "In game"
+				}
+			});
+
+			await this.prisma.user.update
+			({
+				where: 
+				{
+					id: room.idPlayerRight
+				},
+				data:
+				{
+					status: "In game"
+				}
+			});
 		}
-
-		//TODO: hacer lo que tenga que hacer para meter los dos sockets en la misma room
-
 		return room;
 	}
 
@@ -385,7 +407,30 @@ export class UserService
 			}
 		});
 
-		//TODO: hacer lo que tenga que hacer para meter los dos sockets en la misma room
+		//update player status
+		await this.prisma.user.update
+		({
+			where: 
+			{
+				id: room.idPlayerLeft
+			},
+			data:
+			{
+				status: "In game"
+			}
+		});
+
+		await this.prisma.user.update
+		({
+			where: 
+			{
+				id: room.idPlayerRight
+			},
+			data:
+			{
+				status: "In game"
+			}
+		});
 
 		return updateRoom;
 	}
@@ -393,13 +438,20 @@ export class UserService
 	// _____    S E T	P R O F I L E	I N F O    ______
 	async setProfileInfo(str)
 	{
-		//comprobación
 		if (!str?.nickname || str.nickname == "")
 		{
 			return {error: "Nickname is empty."};
 		}
 
-		//ejecución
+		const nicknameExists = await this.prisma.user.findUnique({
+			where: {
+				nickname: str.nickname
+			}
+		});
+
+		if (nicknameExists && nicknameExists.login_42 != str.login_42)
+			return {error: "Nickname already in use."};
+
 		let dataToUpdate = {
 			nickname: str.nickname,
 			auth2FA: str.auth2FA
@@ -408,18 +460,13 @@ export class UserService
 		if (str?.img_str)
 			dataToUpdate["img_str"] = str.img_str
 
-		const updateResponse = await this.prisma.user.update
-		({
+		await this.prisma.user.update({
 			where: {
 				login_42: str.login_42
 			},
 			data: dataToUpdate
-			
 		});
 
-
-		return {
-			response: "Todo ok"
-		};
+		return {response: "Todo ok"};
 	}
 }

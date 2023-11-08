@@ -39,7 +39,6 @@ export class OtherProfilePageComponent implements OnInit {
   ngOnInit()
   {
     const login = this.aroute.snapshot.params["login_42"];
-    //TODO: change 0 for the user selected
     this.service.getOtherProfile(login).subscribe(res => 
     {
       this.profile = res;

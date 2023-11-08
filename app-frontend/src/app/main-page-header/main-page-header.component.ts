@@ -39,5 +39,6 @@ export class MainPageHeaderComponent {
     {
       this.auth.setToken("");
       this.auth.logged.next(false);
+      this.service.socket.disconnect();
     }
 }
