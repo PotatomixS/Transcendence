@@ -31,8 +31,10 @@ video {
     border-width: 1px;
     border-color: black;
     overflow: hidden;
-    position: relative;
+    position: fixed;
     opacity: 0.98;
+    top: 25%;
+    left: 25%;
 }
 
 .wrapper button {
