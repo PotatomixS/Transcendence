@@ -1035,6 +1035,15 @@ export class MyGateway
 			},
 		});
 
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't exist, for some reason"
+			})
+			return;
+		}
+
 		const all_channels = await this.prisma.channel.findMany
 		({
 			where:
@@ -1063,458 +1072,569 @@ export class MyGateway
 	{
 		const words = body.message.split(' ');
 
-
-		//              ______     Get users     ______
-
-		if (words.length == 2)
+		if (words.length < 2)
 		{
-			const this_user = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: body.userName,
-				},
-			});
-
-			const to_kick_user = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: words[1],
-				},
-			});
-
-
-			//              ______     Get joinedChannels     ______
-
-
-			const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
-			({
-				where:
-				{
-					idUser: words[1],
-				},
-			});
-
-			const JoinedChannels_user_to_kick = await this.prisma.joinedChannels.findFirst
-			({
-				where:
-				{
-					idUser: body.userName,
-				},
-			});
-
-			//              ______     kick     ______
-
-
-			if (JoinedChannels_this_user && JoinedChannels_user_to_kick && 
-				(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_kick.idChannel
-				&& this_user.login_42 != to_kick_user.login_42)
-			{
-				const deleteJoinedChannel = await this.prisma.joinedChannels.delete
-				({
-					where:
-					{
-						idUser: words[1],
-					},
-				})
-
-				this.server.to(socket.id).emit('onMessage',
-				{
-					user: "Server",
-					message: "You kicked " + words[1],
-				});
-
-				this.server.to(to_kick_user.socketId).emit('onMessage',
-				{
-					user: "Server",
-					message: "You were kicked by " + this_user.login_42,
-				});
-			}
-		}
-		else
 			this.server.to(socket.id).emit('onMessage', {
 				user: 'Server',
 				message: "/kick [user]"
+			});
+			return;
+		}
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't exist, for some reason"
 			})
+			return;
+		}
+
+		const to_kick_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: words[1],
+			},
+		});
+
+		if (!to_kick_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "User not found"
+			})
+			return;
+		}
+
+		//              ______     Get joinedChannels     ______
+		const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: this_user.login_42
+			},
+		});
+
+		const JoinedChannels_user_to_kick = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: to_kick_user.login_42
+			},
+		});
+
+		if (!JoinedChannels_this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You are not on a channel"
+			})
+			return;
+		}
+
+		if (!JoinedChannels_user_to_kick || JoinedChannels_user_to_kick.idChannel != JoinedChannels_this_user.idChannel)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "The user is not on this channel"
+			})
+			return;
+		}
+
+		if (this_user.channelRol != "owner" && (this_user.channelRol != "admin" || to_kick_user.channelRol != 'user'))
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't have permissions to kick that user"
+			})
+			return;
+		}
+
+		await this.prisma.joinedChannels.delete
+		({
+			where:
+			{
+				idUser: to_kick_user.login_42,
+			},
+		})
+
+		this.server.to(socket.id).emit('onMessage',
+		{
+			user: "Server",
+			message: "You kicked " + to_kick_user.nickname,
+		});
+
+		this.server.to(to_kick_user.socketId).emit('onMessage',
+		{
+			user: "Server",
+			message: "You were kicked by " + this_user.nickname,
+		});
 	}
 
 	async ft_ban(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
 
-		
-		//              ______     Get users     ______
-	
-		if (words.length == 2)
+		if (words.length < 2)
 		{
-			const this_user = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: body.userName,
-				},
-			});
-
-			const to_kick_user = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: words[1],
-				},
-			});
-
-
-			//              ______     Get joinedChannels     ______
-
-			if (this_user && to_kick_user)
-			{
-				const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
-				({
-					where:
-					{
-						idUser: words[1],
-					},
-				});
-
-				const JoinedChannels_user_to_ban = await this.prisma.joinedChannels.findFirst
-				({
-					where:
-					{
-						idUser: body.userName,
-					},
-				});
-
-
-				//              ______     Ban     ______
-
-				if (JoinedChannels_this_user && JoinedChannels_user_to_ban && 
-					(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel
-					&& this_user.login_42 != to_kick_user.login_42)
-				{
-
-
-					//              ______     Delete JoinedChannels table      ______
-
-					const deleteJoinedChannel = await this.prisma.joinedChannels.delete
-					({
-						where:
-						{
-							idUser: words[1],
-						},
-					})
-
-
-					//              ______     Create banned table      ______
-
-					const HasBeenBanned = await this.prisma.usersBannedChannel.findFirst
-					({
-						where:
-						{
-							idUser: words[1],
-							idChannel: JoinedChannels_this_user.idChannel,
-						},
-					});
-					
-					if (!HasBeenBanned)
-					{
-						const UserBanned = await this.prisma.usersBannedChannel.create
-						({
-							data:
-							{
-								idUser: words[1],
-								idChannel: JoinedChannels_this_user.idChannel,
-							},
-						});
-					}
-						
-
-					//              ______     Send Decorative Message      ______
-
-					this.server.to(socket.id).emit('onMessage',
-					{
-						user: "Server",
-						message: "You banned " + words[1],
-					});
-
-					this.server.to(to_kick_user.socketId).emit('onMessage',
-					{
-						user: "Server",
-						message: "You were banned by " + this_user.login_42,
-					});
-
-				}
-			}
-		}
-		else
 			this.server.to(socket.id).emit('onMessage', {
 				user: 'Server',
 				message: "/ban [user]"
+			});
+			return;
+		}
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't exist, for some reason"
+			});
+			return;
+		}
+
+		const to_ban_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: words[1],
+			},
+		});
+
+		if (!to_ban_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "User not found"
+			});
+			return;
+		}
+	
+		const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: this_user.login_42,
+			},
+		});
+
+		const JoinedChannels_user_to_ban = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: to_ban_user.login_42,
+			},
+		});
+
+		if (!JoinedChannels_this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You are not on a channel"
 			})
+			return;
+		}
+
+		if (!JoinedChannels_user_to_ban || JoinedChannels_user_to_ban.idChannel != JoinedChannels_this_user.idChannel)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "The user is not on this channel"
+			})
+			return;
+		}
+
+		if (this_user.channelRol != "owner" && (this_user.channelRol != "admin" || to_ban_user.channelRol != 'user'))
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't have permissions to ban that user"
+			})
+			return;
+		}
+
+		await this.prisma.joinedChannels.delete
+		({
+			where:
+			{
+				idUser: to_ban_user.login_42
+			},
+		});
+
+		const HasBeenBanned = await this.prisma.usersBannedChannel.findFirst
+		({
+			where:
+			{
+				idUser: to_ban_user.login_42,
+				idChannel: JoinedChannels_this_user.idChannel
+			},
+		});
+		
+		if (!HasBeenBanned)
+		{
+			await this.prisma.usersBannedChannel.create
+			({
+				data:
+				{
+					idUser: to_ban_user.login_42,
+					idChannel: JoinedChannels_this_user.idChannel
+				}
+			});
+		}
+
+		this.server.to(socket.id).emit('onMessage',
+		{
+			user: "Server",
+			message: "You banned " + words[1],
+		});
+
+		this.server.to(to_ban_user.socketId).emit('onMessage',
+		{
+			user: "Server",
+			message: "You were banned by " + this_user.login_42,
+		});
 	}
 
 	async ft_mute(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
 
-		
-		//              ______     Get users     ______
-
-		if (words.length == 3)
+		if (words.length < 3)
 		{
-			if (/^\d+$/.test(words[2]))
-			{
-				const this_user = await this.prisma.user.findUnique
-				({
-					where:
-					{
-						login_42: body.userName,
-					},
-				});
-				
-				const to_kick_user = await this.prisma.user.findUnique
-				({
-					where:
-					{
-						login_42: words[1],
-					},
-				});
-				
-				
-				//              ______     Get joinedChannels     ______
-				
-				if (this_user && to_kick_user)
-				{
-					const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
-					({
-						where:
-						{
-							idUser: words[1],
-						},
-					});
-	
-					const JoinedChannels_user_to_ban = await this.prisma.joinedChannels.findFirst
-					({
-						where:
-						{
-							idUser: body.userName,
-						},
-					});
-	
-	
-					//              ______     Mute     ______
-	
-					if (JoinedChannels_this_user && JoinedChannels_user_to_ban && 
-						(this_user.channelRol == "owner" || (this_user.channelRol == "admin" && to_kick_user.channelRol == 'user')) && JoinedChannels_this_user.idChannel == JoinedChannels_user_to_ban.idChannel
-						&& this_user.login_42 != to_kick_user.login_42)
-					{
-	
-						//              ______     Delete JoinedChannels table      ______
-	
-						const deleteJoinedChannel = await this.prisma.joinedChannels.delete
-						({
-							where:
-							{
-								idUser: words[1],
-							},
-						})
-	
-	
-						//              ______     Create muted banned table      ______
-						
-						const ReleaseDate: Date = new Date();
-						ReleaseDate.setSeconds(ReleaseDate.getSeconds() + parseInt(words[2]));
-	
-						const UserBanned = await this.prisma.userMutedChannel.create
-						({
-							data:
-							{
-								idUser: words[1],
-								idChannel: JoinedChannels_this_user.idChannel,
-								dateAllowedIn: ReleaseDate,
-							},
-						});
-	
-						//              ______     Send Decorative Message      ______
-	
-						this.server.to(socket.id).emit('onMessage',
-						{
-							user: "Server",
-							message: "You muted " + words[1] + " for " + words[2] + " seconds.",
-						});
-	
-						this.server.to(to_kick_user.socketId).emit('onMessage',
-						{
-							user: "Server",
-							message: "You were muted by " + this_user.login_42 + " for " + words[2] + " seconds.",
-						});
-	
-					}
-				}
-			}
-		}
-		else
 			this.server.to(socket.id).emit('onMessage', {
 				user: 'Server',
 				message: "/mute [user] [time]"
+			});
+			return;
+		}
+
+		if (!(/^\d+$/.test(words[2])))
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "Time does not have the correct format"
+			});
+			return;
+		}
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't exist, for some reason"
+			});
+			return;
+		}
+		
+		const to_mute_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: words[1],
+			},
+		});
+
+		if (!to_mute_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "User not found"
+			});
+			return;
+		}
+
+		const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: this_user.login_42,
+			},
+		});
+
+		const JoinedChannels_user_to_mute = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: to_mute_user.login_42,
+			},
+		});
+
+		if (!JoinedChannels_this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You are not on a channel"
 			})
+			return;
+		}
+
+		if (!JoinedChannels_user_to_mute || JoinedChannels_user_to_mute.idChannel != JoinedChannels_this_user.idChannel)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "The user is not on this channel"
+			})
+			return;
+		}
+
+		if (this_user.channelRol != "owner" && (this_user.channelRol != "admin" || to_mute_user.channelRol != 'user'))
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't have permissions to mute that user"
+			})
+			return;
+		}
+		
+		const ReleaseDate: Date = new Date();
+		ReleaseDate.setSeconds(ReleaseDate.getSeconds() + parseInt(words[2]));
+
+		await this.prisma.userMutedChannel.create
+		({
+			data:
+			{
+				idUser: to_mute_user.login_42,
+				idChannel: JoinedChannels_this_user.idChannel,
+				dateAllowedIn: ReleaseDate,
+			},
+		});
+
+		this.server.to(socket.id).emit('onMessage',
+		{
+			user: "Server",
+			message: "You muted " + words[1] + " for " + words[2] + " seconds.",
+		});
+
+		this.server.to(to_mute_user.socketId).emit('onMessage',
+		{
+			user: "Server",
+			message: "You were muted by " + this_user.login_42 + " for " + words[2] + " seconds.",
+		});
 	}
 
 	async ft_giveAdmin(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
 
-
-		//              ______     Get users     ______
-
 		if (words.length == 2)
 		{
-			const this_user = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: body.userName,
-				},
-			});
-
-			const to_admin_user = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: words[1],
-				},
-			});
-
-
-			//              ______     Get joinedChannels     ______
-
-			if (this_user && to_admin_user)
-			{
-				const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
-				({
-					where:
-					{
-						idUser: words[1],
-					},
-				});
-
-				const JoinedChannels_to_admin_user = await this.prisma.joinedChannels.findFirst
-				({
-					where:
-					{
-						idUser: body.userName,
-					},
-				});
-
-
-				//              ______     Give Admin     ______
-
-				if (JoinedChannels_this_user && JoinedChannels_to_admin_user && 
-					(this_user.channelRol == "owner") && JoinedChannels_this_user.idChannel == JoinedChannels_to_admin_user.idChannel
-					&& this_user.login_42 != to_admin_user.login_42)
-				{
-
-					await this.prisma.user.update
-					({
-						where:
-						{
-							login_42: to_admin_user.login_42,
-						},
-						data:
-						{
-							channelRol: String("admin"),
-						},
-					});
-		
-					
-
-					//              ______     Send Decorative Message      ______
-
-					this.server.to(socket.id).emit('onMessage',
-					{
-						user: "Server",
-						message: "You made " + words[1] + " admin.",
-					});
-
-					this.server.to(to_admin_user.socketId).emit('onMessage',
-					{
-						user: "Server",
-						message: "You were made admin by " + this_user.login_42 + ". Congratulations!",
-					});
-				}
-			}
-		}
-		else
 			this.server.to(socket.id).emit('onMessage', {
 				user: 'Server',
 				message: "/giveAdmin [User]"
 			})
+			return;
+		}
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't exist, for some reason"
+			});
+			return;
+		}
+
+		const to_admin_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: words[1],
+			},
+		});
+
+		if (!to_admin_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "User not found"
+			});
+			return;
+		}
+
+		const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: this_user.login_42,
+			},
+		});
+
+		const JoinedChannels_to_admin_user = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: to_admin_user.login_42,
+			},
+		});
+
+		if (!JoinedChannels_this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You are not on a channel"
+			})
+			return;
+		}
+
+		if (!JoinedChannels_to_admin_user || JoinedChannels_to_admin_user.idChannel != JoinedChannels_this_user.idChannel)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "The user is not on this channel"
+			})
+			return;
+		}
+
+		if (this_user.channelRol != "owner")
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't have permissions to make that user admin"
+			})
+			return;
+		}
+
+		await this.prisma.user.update
+		({
+			where:
+			{
+				login_42: to_admin_user.login_42,
+			},
+			data:
+			{
+				channelRol: String("admin"),
+			},
+		});
+
+		
+
+		//              ______     Send Decorative Message      ______
+
+		this.server.to(socket.id).emit('onMessage',
+		{
+			user: "Server",
+			message: "You made " + to_admin_user.nickname + " admin.",
+		});
+
+		this.server.to(to_admin_user.socketId).emit('onMessage',
+		{
+			user: "Server",
+			message: "You were made admin by " + this_user.nickname + ". Congratulations!",
+		});
 	}
 
 	async ft_changePassword(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
 
-
-		//              ______     Get users     ______
-		
-		if (words.length == 2)
+		if (words.length < 2)
 		{
-			const this_user = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: body.userName,
-				},
-			});
-
-			//              ______     Get joinedChannels     ______
-
-			const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
-			({
-				where:
-				{
-					idUser: this_user.login_42,
-				},
-			});
-
-
-			//              ______     update pass     ______
-
-			const encryptedPassword = await this.encryptPassword(words[1]);
-
-			if (JoinedChannels_this_user && (this_user.channelRol == "owner"))
-			{
-				await this.prisma.channel.update
-				({
-					where:
-					{
-						Name: JoinedChannels_this_user.idChannel
-					},
-					data:
-					{
-						Password: encryptedPassword,
-					},
-				});
-
-				this.server.to(socket.id).emit('onMessage',
-				{
-					user: "Server",
-					message: "You changed the Password",
-				});
-			}
-		}
-		else
 			this.server.to(socket.id).emit('onMessage', {
 				user: 'Server',
 				message: "/changePassword [User]"
-			})
+			});
+			return;
+		}
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't exist, for some reason"
+			});
+			return;
+		}
+
+		const JoinedChannels_this_user = await this.prisma.joinedChannels.findFirst
+		({
+			where:
+			{
+				idUser: this_user.login_42,
+			},
+		});
+
+		if (!JoinedChannels_this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You are not on a channel"
+			});
+			return;
+		}
+
+		if (this_user.channelRol != "owner")
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You are not the owner"
+			});
+			return;
+		}
+
+		const encryptedPassword = await this.encryptPassword(words[1]);
+
+		await this.prisma.channel.update
+		({
+			where:
+			{
+				Name: JoinedChannels_this_user.idChannel
+			},
+			data:
+			{
+				Password: encryptedPassword,
+			},
+		});
+
+		this.server.to(socket.id).emit('onMessage',
+		{
+			user: "Server",
+			message: "You changed the Password",
+		});
 	}
 
 	async ft_send(body: any, socket: Socket)
 	{
-		//       ______     Encuentra el canal en el que está el user que envía     ______
-		
 		const channel_user = await this.prisma.joinedChannels.findFirst
 		({
 			where:
@@ -1523,126 +1643,100 @@ export class MyGateway
 			},
 		});
 		
-		//       ______     Encuentra todos los joinedChannels con todos los users de ese canal     ______
-		
-		if (channel_user)
+		if (!channel_user)
 		{
-			const joinedChannels = await this.prisma.joinedChannels.findMany
-			({
-				where:
-				{
-					idChannel: channel_user.idChannel,
-				},
-			});
-			
-			
-			//       ______     Saca el user de la string y se los envvía       ______
-
-			for (const joinedChanel_gotten of joinedChannels)
-			{
-				const isBlocked = await this.prisma.blockedUsers.findFirst
-				({
-					where:
-					{
-						userBlocked: String(joinedChanel_gotten.idUser),
-						userBlocker: String(body.userName),
-					},
-				});
-				
-				const urBlocked = await this.prisma.blockedUsers.findFirst
-				({
-					where:
-					{
-						userBlocked: String(body.userName),
-						userBlocker: String(joinedChanel_gotten.idUser),
-					},
-				});
-
-				if (!isBlocked && !urBlocked)
-				{
-					const user_to_find = await this.prisma.user.findUnique
-					({
-						where:
-						{
-							login_42: joinedChanel_gotten.idUser,
-						},
-					});
-
-					const USERNICKNAME = await this.prisma.user.findUnique
-					({
-						where:
-						{
-							login_42: body.userName,
-						},
-					});
-
-					if (user_to_find && USERNICKNAME)
-					{
-						this.server.to(user_to_find.socketId).emit('onMessage',
-						{
-							user: USERNICKNAME.nickname,
-							// user: body.userName,
-							message: "[" + channel_user.idChannel + "] "  + body.message,
-						});
-					}
-				}
-			}
-		}
-		else
 			this.server.to(socket.id).emit('onMessage', {
 				user: 'Server',
 				message: "You are not in a channel"
 			})
+			return;
+		}
+
+		const joinedChannels = await this.prisma.joinedChannels.findMany
+		({
+			where:
+			{
+				idChannel: channel_user.idChannel,
+			},
+		});
+		
+		
+		//       ______     Saca el user de la string y se los envvía       ______
+
+		for (const joinedChanel_gotten of joinedChannels)
+		{
+			const isBlocked = await this.prisma.blockedUsers.findFirst
+			({
+				where:
+				{
+					userBlocked: String(joinedChanel_gotten.idUser),
+					userBlocker: String(body.userName),
+				},
+			});
+			
+			const urBlocked = await this.prisma.blockedUsers.findFirst
+			({
+				where:
+				{
+					userBlocked: String(body.userName),
+					userBlocker: String(joinedChanel_gotten.idUser),
+				},
+			});
+
+			if (!isBlocked && !urBlocked)
+			{
+				const user_to_find = await this.prisma.user.findUnique
+				({
+					where:
+					{
+						login_42: joinedChanel_gotten.idUser,
+					},
+				});
+
+				const USERNICKNAME = await this.prisma.user.findUnique
+				({
+					where:
+					{
+						login_42: body.userName,
+					},
+				});
+
+				if (user_to_find && USERNICKNAME)
+				{
+					this.server.to(user_to_find.socketId).emit('onMessage',
+					{
+						user: USERNICKNAME.nickname,
+						message: "[" + channel_user.idChannel + "] "  + body.message
+					});
+				}
+			}
+		}
 	}
 
 	async ft_listMatches(body: any, socket: Socket)
 	{
+		const all_matches_playing = await this.prisma.gameRooms.findMany
+		({
+			where:
+			{
+				waiting: false,
+			},
+		});
 
-		const words = body.message.split(' ');
-
-		//              ______     buscar tu persona     ______
-
-		if (words.length == 1)
+		this.server.to(socket.id).emit('onMessage',
 		{
-			const my_user = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: body.userName,
-				},
-			});
+			user: "",
+			message: "Game Rooms:",
+		});
 
-			const all_matches_playing = await this.prisma.gameRooms.findMany
-			({
-				where:
-				{
-					waiting: false,
-				},
-			});
-
-
-			//              ______     Poner los matches     ______
-
+		for (const room of all_matches_playing)
+		{
 			this.server.to(socket.id).emit('onMessage',
 			{
 				user: "",
-				message: "Game Rooms:",
+				message: ("-   ID : [" + room.id + "]" ),
 			});
-
-			for (const room of all_matches_playing)
-			{
-				this.server.to(socket.id).emit('onMessage',
-				{
-					user: "",
-					message: ("-   ID : [" + room.id + "]" ),
-				});
-			}
 		}
-		else
-			this.server.to(socket.id).emit('onMessage', {
-				user: 'Server',
-				message: "/listMatches"
-			})
 	}
 
 	async ft_spectate(body: any, socket: Socket)
@@ -1691,6 +1785,15 @@ export class MyGateway
 	{
 		const words = body.message.split(' ');
 
+		if (words.length < 2)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/ft_challenge [User] ?wall"
+			});
+			return;
+		}
+
 		const my_user = await this.prisma.user.findUnique
 		({
 			where:
@@ -1699,91 +1802,100 @@ export class MyGateway
 			},
 		});
 
-		if (words.length >= 2)
+		if (!my_user)
 		{
-			//comprobación previa
-			var alreadyOnMatch : boolean = false;
-			const matches = await this.prisma.gameRooms.findMany
-			({
-				where: {
-					idPlayerLeft: my_user.id
-				}
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't exist, for some reason"
 			});
+			return;
+		}
 
-			if (matches.length > 0)
-				alreadyOnMatch = true;
-
-			const matches2 = await this.prisma.gameRooms.findMany
-			({
-				where: {
-					idPlayerRight: my_user.id,
-					waiting: false
-				}
-			});
-
-			if (matches2.length > 0)
-				alreadyOnMatch = true;
-
-			if (alreadyOnMatch)
-			{
-				this.server.to(socket.id).emit('onMessage',
-				{
-					user: "Server",
-					message: "You are already on a match"
-				});
-				return;
+		var alreadyOnMatch : boolean = false;
+		const matches = await this.prisma.gameRooms.findMany
+		({
+			where: {
+				idPlayerLeft: my_user.id
 			}
-			//fin comprobación
+		});
 
-			const user_to_challenge = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: words[1],
-				},
+		if (matches.length > 0)
+			alreadyOnMatch = true;
+
+		const matches2 = await this.prisma.gameRooms.findMany
+		({
+			where: {
+				idPlayerRight: my_user.id,
+				waiting: false
+			}
+		});
+
+		if (matches2.length > 0)
+			alreadyOnMatch = true;
+
+		if (alreadyOnMatch)
+		{
+			this.server.to(socket.id).emit('onMessage',
+			{
+				user: "Server",
+				message: "You are already on a match"
 			});
+			return;
+		}
 
-			if (!user_to_challenge)
+		const user_to_challenge = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: words[1],
+			},
+		});
+
+		if (!user_to_challenge)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "User not found"
+			})
+			return;
+		}
+
+		var gameMode = "normal";
+		if (words.length >= 3)
+		{
+			if (words[2] != "wall")
 			{
 				this.server.to(socket.id).emit('onMessage', {
 					user: 'Server',
-					message: "/ft_challenge [User]"
+					message: "The second parameter is not literally 'wall'. If you want a normal match don't write extra params."
 				})
 				return;
 			}
-
-			var gameMode = "normal";
-			if (words.length >= 3 && words[2] == "wall")
-				gameMode = "wall";
-
-			const game = await this.prisma.gameRooms.create({
-				data: {
-					idPlayerLeft: my_user.id,
-					idPlayerRight: user_to_challenge.id,
-					waiting: true,
-					findingMatch: false,
-					modoDeJuego: gameMode,
-					ranked: false
-				}
-			});
-
-			var roomName : string = game.id.toString();
-			socket.join(roomName);
-			gameRooms[roomName] = new gameRoom(roomName, this.server, socket, my_user.id, (gameMode == "wall"), this);
-
-			this.server.to(socket.id).emit('FindingMatch');
-
-			this.server.to(user_to_challenge.socketId).emit('onMessage',
-			{
-				user: user_to_challenge.nickname,
-				message: "You have been challenged by " + my_user.nickname
-			});
+			gameMode = "wall";
 		}
-		else
-			this.server.to(socket.id).emit('onMessage', {
-				user: 'Server',
-				message: "/ft_challenge [User] ?wall"
-			})
+
+		const game = await this.prisma.gameRooms.create({
+			data: {
+				idPlayerLeft: my_user.id,
+				idPlayerRight: user_to_challenge.id,
+				waiting: true,
+				findingMatch: false,
+				modoDeJuego: gameMode,
+				ranked: false
+			}
+		});
+
+		var roomName : string = game.id.toString();
+		socket.join(roomName);
+		gameRooms[roomName] = new gameRoom(roomName, this.server, socket, my_user.id, (gameMode == "wall"), this);
+
+		this.server.to(socket.id).emit('FindingMatch');
+
+		this.server.to(user_to_challenge.socketId).emit('onMessage',
+		{
+			user: user_to_challenge.nickname,
+			message: "You have been challenged by " + my_user.nickname
+		});
 	}
 
 	async ft_finishGame(body: any)
