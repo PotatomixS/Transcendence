@@ -1,5 +1,4 @@
 <div class="main-chat">
-    <input type="tel" class="chat-finder" id="cf" pattern="[\d]*" tabindex="1" placeholder="  chat" autocomplete="on" [formControl]="ChatFinder" (keydown)="onKeyDownChatFinder($event)">
     <ul id="chat">
         <li *ngFor="let m of messages">{{ m }}</li>
     </ul>
