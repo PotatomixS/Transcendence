@@ -29,7 +29,6 @@ export class MainPageHeaderComponent {
                   this.profileImage = result;
                 },
                 err => {
-                  console.log(err);
                 }
               )
           });

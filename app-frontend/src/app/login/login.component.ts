@@ -74,7 +74,6 @@ export class LoginComponent
             this.authService.logged.next(true);
           }
         });
-        console.log(Code);
       }
   }
 

@@ -83,7 +83,6 @@ export class ProfilePageComponent implements OnInit {
       fd.append('file', this.image, this.image.name);
       
       this.service.updateProfileImage(fd).subscribe(res => {
-        console.log(res);
         this.updateProfile(this.profileForm.value, res.filename);
       });
     }

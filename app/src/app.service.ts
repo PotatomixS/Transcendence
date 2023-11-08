@@ -13,6 +13,5 @@ export class ReceiveCode {
 	constructor(private code: string) {}
 
 	processData(): void {
-		console.log(`Received data: ${this.code}`);
 	}
 } 

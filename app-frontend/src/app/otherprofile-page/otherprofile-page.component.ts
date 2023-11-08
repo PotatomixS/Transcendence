@@ -50,7 +50,6 @@ export class OtherProfilePageComponent implements OnInit {
               this.profileImage = result;
             },
             err => {
-              console.log(err);
             }
           )
       });

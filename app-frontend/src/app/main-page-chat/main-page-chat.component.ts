@@ -53,8 +53,6 @@ export class MainPageChatComponent
 	
 	onKeyDownChatFinder(key: KeyboardEvent)
 	{
-		if (key.key == "Enter") //unirse al canal
-			console.log(this.ChatFinder.value);
 	}
 	
 	onKeyDownMessageBox(key: KeyboardEvent)

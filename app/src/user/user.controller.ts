@@ -22,7 +22,6 @@ export class UserController {
 
     @Post('profileInfoImage')
     getProfileImage(@Body() str, @Res({ passthrough: true }) res: Response): StreamableFile {
-        console.log("IMAGE: " + str.image);
         const file = createReadStream(join(process.cwd(), 'upload/images/' + str.image));
         return new StreamableFile(file);
     }
@@ -84,7 +83,6 @@ export class UserController {
     }))
         uploadFile(@UploadedFile() file: Express.Multer.File)
     {
-        console.log(file);
         return file;
     }
 }

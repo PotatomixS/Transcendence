@@ -89,10 +89,8 @@ export class AppComponent
 							this.service.faActive.next(true);
 						}
 						this.ShowLogin = true;
-						console.log(response?.error);
 					}
 				},
-				err => console.log('HTTP Error', err)
 			);
 		}
 	}

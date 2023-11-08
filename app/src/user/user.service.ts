@@ -17,7 +17,6 @@ export class UserService
 	async getProfileInfo(str)
 	{
 		//	Look for user in db
-		//console.log(str.);
 		const user = await this.prisma.user.findUnique
 		({
 			where: 
@@ -186,7 +185,6 @@ export class UserService
 	async getProfileMatches(str)
 	{
 		//	Look for user in db
-		//console.log(str.);
 		const user = await this.prisma.user.findUnique
 		({
 			where: 
