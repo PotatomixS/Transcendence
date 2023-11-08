@@ -572,6 +572,15 @@ export class MyGateway
 	{
 		const words = body.message.split(' ');
 
+		if (words.length < 2)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/showProfile [User]"
+			});
+			return;
+		}
+
 		const my_user = await this.prisma.user.findUnique
 		({
 			where:
@@ -580,34 +589,41 @@ export class MyGateway
 			},
 		});
 
-		if (words.length == 2)
+		if (!my_user)
 		{
-			const user_to_send = await this.prisma.user.findUnique
-			({
-				where:
-				{
-					login_42: words[1],
-				},
-			});
-
-			if (user_to_send)
-			{
-				this.server.to(my_user.socketId).emit('onMessage',
-				{
-					user: body.userName,
-					other: 
-					{
-						command: "Friend",
-						friend: words[1]
-					},
-				});
-			}
-		}
-		else
 			this.server.to(socket.id).emit('onMessage', {
 				user: 'Server',
-				message: "/showProfile [User]"
+				message: "You don't exist, for some reason"
+			});
+			return;
+		}
+
+		const user_to_send = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: words[1],
+			},
+		});
+
+		if (!user_to_send)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "User not found"
 			})
+			return;
+		}
+
+		this.server.to(my_user.socketId).emit('onMessage',
+		{
+			user: body.userName,
+			other: 
+			{
+				command: "Friend",
+				friend: user_to_send.login_42
+			},
+		});
 	}
 
 	async ft_join(body: any, socket: Socket)
@@ -624,6 +640,16 @@ export class MyGateway
 			},
 		});
 
+		if (!this_user)
+		{
+			this.server.to(this_user.socketId).emit('onMessage',
+			{
+				user: "Server",
+				message: "You don't exist, for some reason",
+			});
+			return;
+		}
+
 		const is_on_channel_alredy = await this.prisma.joinedChannels.findUnique
 		({
 			where:
@@ -637,271 +663,233 @@ export class MyGateway
 			this.server.to(this_user.socketId).emit('onMessage',
 			{
 				user: "Server",
-				message: "You are alredy in a channel.",
+				message: "You are alredy on a channel.",
 			});
+			return;
 		}
 
 
-		if (!is_on_channel_alredy && words[1])
+		if (words.length < 2)
 		{
-			//              ______     Busca  canales     ______
-
-			const channel_exists = await this.prisma.channel.findFirst
-			({
-				where:
-				{
-					Name: words[1],
-				},
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
 			});
-			
+			return;
+		}
 
-			//              ______     Si está baneado     ______
-
-
-			const banned_channel_exists = await this.prisma.usersBannedChannel.findFirst
-			({
-				where:
-				{
-					idUser: this_user.login_42,
-					idChannel: words[1],
-					
-				},
-			});
-
-			if (banned_channel_exists)
+		//              ______     Busca  canales     ______
+		const channel_exists = await this.prisma.channel.findFirst
+		({
+			where:
 			{
-				this.server.to(this_user.socketId).emit('onMessage',
+				Name: words[1]
+			}
+		});
+
+		//              ______     Si está baneado     ______
+		const banned_channel_exists = await this.prisma.usersBannedChannel.findFirst
+		({
+			where:
+			{
+				idUser: this_user.login_42,
+				idChannel: words[1]
+			}
+		});
+
+		if (banned_channel_exists)
+		{
+			this.server.to(this_user.socketId).emit('onMessage',
+			{
+				user: "Server",
+				message: "You are banned from this channel.",
+			});
+			return;
+		}
+
+		//              ______     Si está muteado     ______
+		const muted_channel_exists = await this.prisma.userMutedChannel.findFirst
+		({
+			where:
+			{
+				idUser: this_user.login_42,
+				idChannel: words[1],
+			},
+		});
+
+		var isAllowedIn = true;
+
+		if (muted_channel_exists)
+		{
+			const dateNow: Date = new Date();
+
+			if (dateNow >= muted_channel_exists.dateAllowedIn)
+			{
+				isAllowedIn = true;
+				const deleteUser = await this.prisma.userMutedChannel.deleteMany
+				({
+					where:
+					{
+						idUser: body.userName,
+						idChannel: words[1],
+					},
+				})
+			}
+			else
+			{
+				isAllowedIn = false;
+				this.server.to(socket.id).emit('onMessage',
 				{
 					user: "Server",
-					message: "You are banned from this server.",
+					message: "You are muted from this channel. Patience.",
 				});
 			}
+		}
 
+		//              ______     CREA el canal si no existe     ______
 
-			//              ______     Si está muteado     ______
-
-			const muted_channel_exists = await this.prisma.userMutedChannel.findFirst
-			({
-				where:
-				{
-					idUser: this_user.login_42,
-					idChannel: words[1],
-				},
-			});
-
-			var isAllowedIn = true;
-
-			if (muted_channel_exists)
+		if (!channel_exists)
+		{
+			if (words.length != 4)
 			{
-				const dateNow: Date = new Date();
+				this.server.to(socket.id).emit('onMessage', {
+					user: 'Server',
+					message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
+				})
+			}
+			else
+			{
+				// Crear el channel cno la password
+				var pass_passed = 0;
 
-				if (dateNow >= muted_channel_exists.dateAllowedIn)
+				//              ______     Crea el channel dependiendo si tiene password     ______
+
+				if (words[2].startsWith("password:") == true)
 				{
-					isAllowedIn = true;
-					this.server.to(this_user.socketId).emit('onMessage',
-					{
-						user: "Server",
-						message: "You were muted, but now, you are allowed in. Rejoice.",
-					});
-					const deleteUser = await this.prisma.userMutedChannel.deleteMany
+					pass_passed = 1;
+
+					const parts = words[2].split(":");
+					
+					const encryptedPassword = await this.encryptPassword(parts[1]);
+					const channel8 = await this.prisma.channel.create
 					({
-						where:
+						data:
 						{
-							idUser: body.userName,
-							idChannel: words[1],
+							Name: words[1],
+							Password: encryptedPassword,
 						},
-					})
+					});
+				}
+				else if (words[2] == ("noPassword"))
+				{
+					pass_passed = 1;
+
+					const channel8 = await this.prisma.channel.create
+					({
+						data:
+						{
+							Name: words[1],
+							Password: Buffer.from([])
+						},
+					});
 				}
 				else
-				{
-					isAllowedIn = false;
-					this.server.to(this_user.socketId).emit('onMessage',
-					{
-						user: "Server",
-						message: "You are muted from this channel. Patience.",
-					});
-				}
-			}
-			
-
-
-
-
-			//              ______     CREA el canal si no existe     ______
-
-			if (!channel_exists)
-			{
-				if (words.length != 4)
 				{
 					this.server.to(socket.id).emit('onMessage', {
 						user: 'Server',
 						message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
 					})
 				}
-				else
+
+
+
+
+				//              ______     Update la vairable de privado     ______
+
+				if (words[3] === ("private"))
 				{
-					// Crear el channel cno la password
-					var pass_passed = 0;
-
-					//              ______     Crea el channel dependiendo si tiene password     ______
-
-					if (words[2].startsWith("password:") == true)
-					{
-						pass_passed = 1;
-
-						const parts = words[2].split(":");
-						
-						const encryptedPassword = await this.encryptPassword(parts[1]);
-						const channel8 = await this.prisma.channel.create
-						({
-							data:
-							{
-								Name: words[1],
-								Password: encryptedPassword,
-							},
-						});
-					}
-					else if (words[2] == ("noPassword"))
-					{
-						pass_passed = 1;
-
-						const channel8 = await this.prisma.channel.create
-						({
-							data:
-							{
-								Name: words[1],
-								Password: Buffer.from([])
-							},
-						});
-					}
-					else
-					{
-						this.server.to(socket.id).emit('onMessage', {
-							user: 'Server',
-							message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
-						})
-					}
-
-
-
-
-					//              ______     Update la vairable de privado     ______
-
-					if (words[3] === ("private"))
-					{
-						const channel8 = await this.prisma.channel.findFirst
-						({
-							where:
-							{
-								Name: words[1],
-							},
-						});
-						if (channel8)
+					const channel8 = await this.prisma.channel.findFirst
+					({
+						where:
 						{
-							await this.prisma.channel.update
-							({
-								where:
-								{
-									Name: words[1],
-								},
-								data:
-								{
-									isPrivate: true,
-								},
-							});
-						}
-					}
-					else if (words[3] === ("public"))
+							Name: words[1],
+						},
+					});
+					if (channel8)
 					{
-						const channel8 = await this.prisma.channel.findFirst
+						await this.prisma.channel.update
 						({
 							where:
 							{
 								Name: words[1],
 							},
-						});
-						if (channel8)
-						{
-							await this.prisma.channel.update
-							({
-								where:
-								{
-									Name: words[1],
-								},
-								data:
-								{
-									isPrivate: false,
-								},
-							});
-						}
-					}
-					else
-					{
-						this.server.to(socket.id).emit('onMessage', {
-							user: 'Server',
-							message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
-						})
-					}
-
-
-
-
-					//              ______     Si todo va bien, crea la tabla     ______
-
-					if (pass_passed == 1)
-					{
-
-						const this_user = await this.prisma.user.findUnique
-						({
-							where:
-							{
-								login_42: body.userName,
-							},
-						});
-
-						await this.prisma.user.update
-						({
-							where:
-							{
-								id: this_user.id
-							},
 							data:
 							{
-								channelRol: String("owner"),
-							},
-						});
-						
-						const joined_channel_table = await this.prisma.joinedChannels.create
-						({
-							data:
-							{
-								idUser: body.userName,
-								idChannel: words[1],
+								isPrivate: true,
 							},
 						});
 					}
 				}
-			}
-
-
-
-
-			// 			 _____     Se une. Crea joinedChannels       _____
-
-			if (channel_exists && !banned_channel_exists && isAllowedIn)
-			{
-				const channel = await this.prisma.channel.findUnique
-				({
-					where:
-					{
-						Name: words[1],
-					},
-				});
-
-				const decryptedChannelPassword = await this.decryptPassword(channel.Password);
-
-				if (decryptedChannelPassword === words[2] || decryptedChannelPassword == "")
+				else if (words[3] === ("public"))
 				{
+					const channel8 = await this.prisma.channel.findFirst
+					({
+						where:
+						{
+							Name: words[1],
+						},
+					});
+					if (channel8)
+					{
+						await this.prisma.channel.update
+						({
+							where:
+							{
+								Name: words[1],
+							},
+							data:
+							{
+								isPrivate: false,
+							},
+						});
+					}
+				}
+				else
+				{
+					this.server.to(socket.id).emit('onMessage', {
+						user: 'Server',
+						message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
+					})
+				}
+
+
+
+
+				//              ______     Si todo va bien, crea la tabla     ______
+
+				if (pass_passed == 1)
+				{
+
+					const this_user = await this.prisma.user.findUnique
+					({
+						where:
+						{
+							login_42: body.userName,
+						},
+					});
+
+					await this.prisma.user.update
+					({
+						where:
+						{
+							id: this_user.id
+						},
+						data:
+						{
+							channelRol: String("owner"),
+						},
+					});
+					
 					const joined_channel_table = await this.prisma.joinedChannels.create
 					({
 						data:
@@ -911,22 +899,45 @@ export class MyGateway
 						},
 					});
 				}
-				else
-				{
-					this.server.to(this_user.socketId).emit('onMessage',
-					{
-						user: "Server",
-						message: "Wrong password",
-					});
-				}
 			}
 		}
-		else if (!words[1])
+
+
+
+
+		// 			 _____     Se une. Crea joinedChannels       _____
+
+		if (channel_exists && !banned_channel_exists && isAllowedIn)
 		{
-			this.server.to(socket.id).emit('onMessage', {
-				user: 'Server',
-				message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
-			})
+			const channel = await this.prisma.channel.findUnique
+			({
+				where:
+				{
+					Name: words[1],
+				},
+			});
+
+			const decryptedChannelPassword = await this.decryptPassword(channel.Password);
+
+			if (decryptedChannelPassword === words[2] || decryptedChannelPassword == "")
+			{
+				const joined_channel_table = await this.prisma.joinedChannels.create
+				({
+					data:
+					{
+						idUser: body.userName,
+						idChannel: words[1],
+					},
+				});
+			}
+			else
+			{
+				this.server.to(socket.id).emit('onMessage',
+				{
+					user: "Server",
+					message: "Wrong password",
+				});
+			}
 		}
 	}
 	
@@ -935,88 +946,81 @@ export class MyGateway
 
 		// 			 _____     Ver si el usuario está en un canal o no     _____
 
-		const isUserinJoinedChannel = await this.prisma.joinedChannels.findUnique
+		const userChannel = await this.prisma.joinedChannels.findUnique
 		({
 			where:
 			{
 				idUser: body.userName,
 			},
 		});
- 
 
 		// 			 _____     Si no está en ningún canal, busco el canal en el que está, guardo su nombre, le quito del canal, encuentro si hay más gente en ese canal y si no hay nadie más lo borro      _____
 
-		if (isUserinJoinedChannel)
+		if (!userChannel)
 		{
-			const whichChannelUserIsIn = await this.prisma.joinedChannels.findFirst
-			({
-				where:
-				{
-					idUser: body.userName,
-				},
-			})
-			
-			await this.prisma.user.update
-			({
-				where:
-				{
-					login_42: body.userName
-				},
-				data:
-				{
-					channelRol: String("user"),
-				},
-			});
-
-			const channelName: string = whichChannelUserIsIn.idChannel;
-			const deleteUser = await this.prisma.joinedChannels.delete
-			({
-				where:
-				{
-					idUser: body.userName,
-				},
-			})
-			const allElements = await this.prisma.joinedChannels.findMany
-			({
-				where:
-				{
-					idChannel: channelName,
-				},
-			});
-			if (allElements.length === 0)
-			{
-				// 			 _____     borrar todos los baneados también     _____
-
-				const deleteMuted = await this.prisma.userMutedChannel.deleteMany
-				({
-					where:
-					{
-						idChannel: channelName,
-					},
-				})
-
-				const deleteBanned = await this.prisma.usersBannedChannel.deleteMany
-				({
-					where:
-					{
-						idChannel: channelName,
-					},
-				})
-
-				const whichChannel = await this.prisma.channel.delete
-				({
-					where:
-					{
-						Name: channelName,
-					},
-				})
-			}
-		}
-		else
 			this.server.to(socket.id).emit('onMessage', {
 				user: 'Server',
 				message: "You are not in a channel"
 			})
+			return;
+		}
+		
+		await this.prisma.user.update
+		({
+			where:
+			{
+				login_42: body.userName
+			},
+			data:
+			{
+				channelRol: String("user"),
+			},
+		});
+
+		await this.prisma.joinedChannels.delete
+		({
+			where:
+			{
+				idUser: body.userName,
+			},
+		})
+
+		const allElements = await this.prisma.joinedChannels.findMany
+		({
+			where:
+			{
+				idChannel: userChannel.idChannel,
+			},
+		});
+		
+		if (allElements.length == 0)
+		{
+			// 			 _____     borrar todos los baneados también     _____
+
+			await this.prisma.userMutedChannel.deleteMany
+			({
+				where:
+				{
+					idChannel: userChannel.idChannel,
+				},
+			})
+
+			await this.prisma.usersBannedChannel.deleteMany
+			({
+				where:
+				{
+					idChannel: userChannel.idChannel,
+				},
+			})
+
+			await this.prisma.channel.delete
+			({
+				where:
+				{
+					Name: userChannel.idChannel,
+				},
+			})
+		}
 	}
 
 	async ft_list(body: any, socket: Socket)
@@ -1039,7 +1043,7 @@ export class MyGateway
 			},
 		});
 		
-		this.server.to(this_user.socketId).emit('onMessage',
+		this.server.to(socket.id).emit('onMessage',
 		{
 			user: "",
 			message: "Channels:",
@@ -1047,7 +1051,7 @@ export class MyGateway
 		
 		for (const each_channel of all_channels)
 		{
-			this.server.to(this_user.socketId).emit('onMessage',
+			this.server.to(socket.id).emit('onMessage',
 			{
 				user: "",
 				message: ("-   " + each_channel.Name),
@@ -1115,7 +1119,7 @@ export class MyGateway
 					},
 				})
 
-				this.server.to(this_user.socketId).emit('onMessage',
+				this.server.to(socket.id).emit('onMessage',
 				{
 					user: "Server",
 					message: "You kicked " + words[1],
@@ -1227,7 +1231,7 @@ export class MyGateway
 
 					//              ______     Send Decorative Message      ______
 
-					this.server.to(this_user.socketId).emit('onMessage',
+					this.server.to(socket.id).emit('onMessage',
 					{
 						user: "Server",
 						message: "You banned " + words[1],
@@ -1333,7 +1337,7 @@ export class MyGateway
 	
 						//              ______     Send Decorative Message      ______
 	
-						this.server.to(this_user.socketId).emit('onMessage',
+						this.server.to(socket.id).emit('onMessage',
 						{
 							user: "Server",
 							message: "You muted " + words[1] + " for " + words[2] + " seconds.",
@@ -1426,7 +1430,7 @@ export class MyGateway
 
 					//              ______     Send Decorative Message      ______
 
-					this.server.to(this_user.socketId).emit('onMessage',
+					this.server.to(socket.id).emit('onMessage',
 					{
 						user: "Server",
 						message: "You made " + words[1] + " admin.",
@@ -1493,7 +1497,7 @@ export class MyGateway
 					},
 				});
 
-				this.server.to(this_user.socketId).emit('onMessage',
+				this.server.to(socket.id).emit('onMessage',
 				{
 					user: "Server",
 					message: "You changed the Password",
@@ -1619,7 +1623,7 @@ export class MyGateway
 
 			//              ______     Poner los matches     ______
 
-			this.server.to(my_user.socketId).emit('onMessage',
+			this.server.to(socket.id).emit('onMessage',
 			{
 				user: "",
 				message: "Game Rooms:",
@@ -1627,7 +1631,7 @@ export class MyGateway
 
 			for (const room of all_matches_playing)
 			{
-				this.server.to(my_user.socketId).emit('onMessage',
+				this.server.to(socket.id).emit('onMessage',
 				{
 					user: "",
 					message: ("-   ID : [" + room.id + "]" ),
