@@ -22,9 +22,6 @@ services:
 
     command: npm run start:debug
 
-    depends_on: 
-      - postgres
-
     environment:
       NODE_ENV: ${NODE_ENV}
       PORT: ${BACKEND_PORT}

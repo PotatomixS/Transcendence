@@ -108,8 +108,6 @@ export class MyGateway
 			this.ft_giveAdmin(body, socket);
 		else if (words[0] == "/changePassword")
 			this.ft_changePassword(body, socket);
-		else if (words[0] == "/kick")
-			this.ft_kick(body, socket);
 
 		//              ______     Game Commands     ______
 		else if (words[0] == "/listMatches")
@@ -1896,6 +1894,8 @@ export class MyGateway
 			user: user_to_challenge.nickname,
 			message: "You have been challenged by " + my_user.nickname
 		});
+
+		this.server.to(user_to_challenge.socketId).emit('GetChallenged');
 	}
 
 	async ft_finishGame(body: any)

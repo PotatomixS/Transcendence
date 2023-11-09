@@ -56,6 +56,12 @@ export class PongPageComponent implements OnInit
       this.waiting = true;
     });
 
+    this.profileService.socket.on("GetChallenged", () => {
+      this.profileService.getChallenges().subscribe(challenges => {
+        this.challenges = challenges;
+      });
+    });
+
     if (!this.watch)
     {
       this.profileService.getOnMatch().subscribe(res => {
@@ -185,8 +191,13 @@ export class PongPageComponent implements OnInit
     this.profileService.socket.on("gameFinished", () =>{
       if (this.matchPlaying == true)
       {
+        this.profileService.getChallenges().subscribe(challenges => {
+          this.challenges = challenges;
+        });
+        
         this.matchPlaying = false;
         this.waiting = false;
+        
         alert("Game finished!");
       }
     });
