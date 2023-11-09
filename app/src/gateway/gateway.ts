@@ -116,6 +116,8 @@ export class MyGateway
 			this.ft_spectate(body, socket);
 		else if (words[0] == "/challenge")
 			this.ft_challenge(body, socket);
+		else if (words[0] == "/help")
+			this.ft_help(body, socket);
 		else
 			this.ft_send(body, socket);
 	}
@@ -705,50 +707,11 @@ export class MyGateway
 			return;
 		}
 
-		//              ______     Si está muteado     ______
-		const muted_channel_exists = await this.prisma.userMutedChannel.findFirst
-		({
-			where:
-			{
-				idUser: this_user.login_42,
-				idChannel: words[1],
-			},
-		});
-
-		var isAllowedIn = true;
-
-		if (muted_channel_exists)
-		{
-			const dateNow: Date = new Date();
-
-			if (dateNow >= muted_channel_exists.dateAllowedIn)
-			{
-				isAllowedIn = true;
-				const deleteUser = await this.prisma.userMutedChannel.deleteMany
-				({
-					where:
-					{
-						idUser: body.userName,
-						idChannel: words[1],
-					},
-				})
-			}
-			else
-			{
-				isAllowedIn = false;
-				this.server.to(socket.id).emit('onMessage',
-				{
-					user: "Server",
-					message: "You are muted from this channel. Patience.",
-				});
-			}
-		}
-
 		//              ______     CREA el canal si no existe     ______
 
 		if (!channel_exists)
 		{
-			if (words.length != 4)
+			if (words.length < 4)
 			{
 				this.server.to(socket.id).emit('onMessage', {
 					user: 'Server',
@@ -762,7 +725,7 @@ export class MyGateway
 
 				//              ______     Crea el channel dependiendo si tiene password     ______
 
-				if (words[2].startsWith("password:") == true)
+				if (words[2].startsWith("password:") == true && (words[3] === ("private") || words[3] === ("public")))
 				{
 					pass_passed = 1;
 
@@ -778,7 +741,7 @@ export class MyGateway
 						},
 					});
 				}
-				else if (words[2] == ("noPassword"))
+				else if (words[2] == ("noPassword") && (words[3] === ("private") || words[3] === ("public")))
 				{
 					pass_passed = 1;
 
@@ -905,7 +868,7 @@ export class MyGateway
 
 		// 			 _____     Se une. Crea joinedChannels       _____
 
-		if (channel_exists && !banned_channel_exists && isAllowedIn)
+		if (channel_exists && !banned_channel_exists)
 		{
 			const channel = await this.prisma.channel.findUnique
 			({
@@ -1439,7 +1402,7 @@ export class MyGateway
 	{
 		const words = body.message.split(' ');
 
-		if (words.length == 2)
+		if (words.length < 2)
 		{
 			this.server.to(socket.id).emit('onMessage', {
 				user: 'Server',
@@ -1631,8 +1594,118 @@ export class MyGateway
 		});
 	}
 
+	async ft_help(body: any, socket: Socket)
+	{
+		const words = body.message.split(' ');
+
+		if (words.length < 1)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "/help"
+			});
+			return;
+		}
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You don't exist, for some reason"
+			});
+			return;
+		}
+
+
+
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "Commands:"
+		});		
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/dm [User] [message]"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/block [User]"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/unblock"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/friends"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/showProfile [User]"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/join [ChannelName] [password:[urPass] / noPassword] [public / private]"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/leave"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/list"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/kick [user]"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/ban[user]"
+		});
+
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/mute [user] [time]"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/giveAdmin [User]"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/changePassword [User]"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/listMatches"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/spectate"
+		});
+		this.server.to(socket.id).emit('onMessage', {
+			user: '',
+			message: "/challenge [User] ?wall"
+		});
+	}
+
 	async ft_send(body: any, socket: Socket)
 	{
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
 		const channel_user = await this.prisma.joinedChannels.findFirst
 		({
 			where:
@@ -1681,7 +1754,43 @@ export class MyGateway
 				},
 			});
 
-			if (!isBlocked && !urBlocked)
+			//              ______     Si está muteado     ______
+			var isAllowedToTalk = true;
+
+			const muted_channel_exists = await this.prisma.userMutedChannel.findFirst
+			({
+				where:
+				{
+					idUser: this_user.login_42,
+					idChannel: channel_user.idChannel,
+				},
+			});
+
+			if (muted_channel_exists)
+			{
+				const dateNow: Date = new Date();
+	
+				if (dateNow >= muted_channel_exists.dateAllowedIn)
+				{
+					isAllowedToTalk = true;
+					const deleteUser = await this.prisma.userMutedChannel.deleteMany
+					({
+						where:
+						{
+							idUser: body.userName,
+							idChannel: channel_user.idChannel,
+						},
+					})
+				}
+				else
+				{
+					isAllowedToTalk = false;
+				}
+			}
+
+
+
+			if (!isBlocked && !urBlocked && isAllowedToTalk)
 			{
 				const user_to_find = await this.prisma.user.findUnique
 				({
@@ -1787,7 +1896,7 @@ export class MyGateway
 		{
 			this.server.to(socket.id).emit('onMessage', {
 				user: 'Server',
-				message: "/ft_challenge [User] ?wall"
+				message: "/challenge [User] ?wall"
 			});
 			return;
 		}
