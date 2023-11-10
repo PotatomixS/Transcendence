@@ -36,6 +36,10 @@ export class MainPageHeaderComponent {
       this.service.socket.on('expulsion', () => {
         this.Logout();
       });
+
+      this.service.socket.on('update', () => {
+        this.service.getProfile();
+      });
     }
 
     Logout()

@@ -68,6 +68,10 @@ export class MyGateway
 				message: "Te has conectado a la sala " + roomName,
 			});
 		}
+		else if (gameRooms[roomName].idPlayer1 == user_id)
+			gameRooms[roomName].socket1 = socket;
+		else if (gameRooms[roomName].idPlayer2 == user_id)
+			gameRooms[roomName].socket2 = socket;
 		else if (gameRooms[roomName].getStatus() == false)
 			gameRooms[roomName].gameLoop(socket, user_id);
 	}
@@ -2087,7 +2091,7 @@ export class MyGateway
 
 		await this.prisma.user.update({
 			where: {
-				login_42: words[1]
+				id: user.id
 			},
 			data: {
 				webRol: "moderator"
@@ -2099,6 +2103,8 @@ export class MyGateway
 			user: "Server",
 			message: "User made web admin"
 		});
+
+		this.server.to(user.socketId).emit('update');
 	}
 
 	async ft_admin_remove_mod(body: any, socket: Socket)
@@ -2143,7 +2149,7 @@ export class MyGateway
 
 		await this.prisma.user.update({
 			where: {
-				login_42: words[1]
+				id: user.id
 			},
 			data: {
 				webRol: "user"
@@ -2155,6 +2161,8 @@ export class MyGateway
 			user: "Server",
 			message: "User removed from web admins"
 		});
+
+		this.server.to(user.socketId).emit('update');
 	}
 
 	async ft_admin_help(body: any, socket: Socket)
@@ -2239,6 +2247,17 @@ export class MyGateway
 			{
 				user: "Server",
 				message: "Match has not started yet"
+			});
+			return;
+		}
+
+		if (gameRooms[words[1]].socket1.id == socket.id ||
+			gameRooms[words[1]].socket2.id == socket.id)
+		{
+			this.server.to(socket.id).emit('onMessage',
+			{
+				user: "Server",
+				message: "You are already on that match"
 			});
 			return;
 		}

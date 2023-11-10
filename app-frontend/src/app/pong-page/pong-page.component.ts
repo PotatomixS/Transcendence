@@ -71,15 +71,18 @@ export class PongPageComponent implements OnInit
           return;
         else
         {
+          this.profileService.socket.emit("enterRoom", {
+            user_id: this.profileService.profile.getValue().id,
+            room_id: this.match.id
+          });
+
           if (res?.waiting == true)
+          {
             this.waiting = true;
+          }
           else
           {
             this.matchPlaying = true;
-            this.profileService.socket.emit("enterRoom", {
-              user_id: this.profileService.profile.getValue().id,
-              room_id: res.id
-            });
             this.loadMatch();
           }
         }
