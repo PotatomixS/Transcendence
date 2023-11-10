@@ -11,4 +11,7 @@
         <p>{{(profile | async)?.nickname}}</p>
         <img [src]="profileImage">
     </div>
+    <div class="admin" routerLink="/admin">
+        <p *ngIf="(profile | async)?.webRol != 'user'">admin</p>
+    </div>
 </div>

@@ -28,7 +28,8 @@ export class OtherProfilePageComponent implements OnInit {
       auth2FA: false,
       elo: 0,
       wins: 0,
-      loses: 0
+      loses: 0,
+      webRol: "user"
     };
 
     this.isFriend = false;

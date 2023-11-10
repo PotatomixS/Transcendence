@@ -32,6 +32,13 @@
     cursor: pointer;
 }
 
+.main-header .admin{
+    float: right;
+    margin-right: 10px;
+    cursor: pointer;
+    color: white;
+}
+
 .main-header .profile p {
     position: relative;
     float: right;

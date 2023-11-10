@@ -48,6 +48,12 @@ export class AppComponent
 			this.ShowLogin = false;
 			this.service.getSign(this.getQueryParameter()).subscribe(
 				response => {
+					if (response?.expelled)
+					{
+						alert(response.expelled);
+						return;
+					}
+
 					//profile update
 					const newProfile: Profile = {
 						id: "",
@@ -57,7 +63,8 @@ export class AppComponent
 						auth2FA: false,
 						elo: 0,
 						wins: 0,
-						loses: 0
+						loses: 0,
+						webRol: "user"
 					};
 					this.profileService.profile.next(newProfile);
 

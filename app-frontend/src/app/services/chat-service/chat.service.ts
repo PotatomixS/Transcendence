@@ -29,5 +29,23 @@ export class ChatService
 		});
 		return observable;
 	}
+
+	sendAdminMessage(message: string)
+	{
+		this.profileService.socket.emit('newAdminMessage', {userName: this.profileService.profile.getValue().login_42, message: message});
+	}
+
+	getAdminMessages()
+	{
+		let observable = new Observable<{ user: String, message: String, other: any }>(observer => 
+		{
+			this.profileService.socket.on('onAdminMessage', (data: any) =>
+			{
+				observer.next(data);
+			});
+			return () => { this.profileService.socket.disconnect(); };  
+		});
+		return observable;
+	}
 	
 }

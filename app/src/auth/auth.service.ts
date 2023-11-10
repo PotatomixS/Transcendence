@@ -68,11 +68,21 @@ export class AuthService
 
 
 		//	Create User
-		
+		var webRol = "user";
 		if (!user)
 		{
 			try
 			{
+				const userCount = await this.prisma.user.count
+				({
+					where: 
+					{
+					}
+				});
+
+				if (userCount <= 0)
+					webRol = "owner";
+
 				const newUser = await this.prisma.user.create
 				({
 					data:
@@ -80,8 +90,9 @@ export class AuthService
 						code2FA: "",
 						login_42: user_gotten,
 						nickname: user_gotten,
-						email_42: email_gotten,		//CHAGNE
-						socketId: ""
+						email_42: email_gotten,
+						socketId: "",
+						webRol
 					},
 				});
 
@@ -94,7 +105,8 @@ export class AuthService
 					wins: 0,
 					loses: 0,
 					access_token: token.access_token,
-					new: true
+					new: true,
+					webRol
 				};
  
 			}
@@ -109,6 +121,16 @@ export class AuthService
 				}
 				throw error;
 			}
+		}
+		else
+		{
+			if (user.expelled == true)
+			{
+				return {
+					expelled: "This user was expelled"
+				}
+			}
+			webRol = user.webRol;
 		}
 
 		if (user.auth2FA == true)
@@ -157,7 +179,8 @@ export class AuthService
 			elo: user.elo,
 			wins: wins,
 			loses: loses,
-			access_token: token.access_token
+			access_token: token.access_token,
+			webRol
 		};
 	}
 
@@ -176,14 +199,10 @@ export class AuthService
 			}
 		);
 		
-		
 		return{
 			access_token: token, 
 		};
 	}
-
-
-
 
 	// _____    T R Y	C O D E    ______
 
@@ -225,10 +244,10 @@ export class AuthService
 			elo: user.elo,
 			wins: wins,
 			loses: loses,
-			access_token: token.access_token
+			access_token: token.access_token,
+			webRol: user.webRol
 		};
 	}
-
 
 	// _____    G E T    U S E R    ______
 
@@ -261,10 +280,7 @@ export class AuthService
 		}
 	}
 
-
-
 	// _____    S E N D    E M A I L    ______
-
 
 	async sendEmail(str_email: string)
 	{
@@ -299,229 +315,8 @@ export class AuthService
 			const info = await transporter.sendMail(mailOptions);
 			return (random_str);
 
-			} catch (error)
-			{
-				console.error('Error sending email:', error);
-			}
+		} catch (error){
+			console.error('Error sending email:', error);
+		}
 	}
-
 }
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// 	// _____    S I G N     U P     ______
-// 	// ___________________________________
-	
-// 	async sign(dto: AuthDto)
-// 	{
-		
-// 	// ___  Generate the password hash ___ 
-	
-// 		// const hash = await argon.hash(dto.password);
-
-
-
-		
-// 	// ___ Save the new user in the DB ___ 
-
-// 		try
-// 		{
-// 			const user = await this.prisma.user.create
-// 			({
-// 				data:
-// 				{
-// 					login_42: "",
-// 					nickname: "",
-// 				},
-// 			});
-
-// 	// 		___ Return the savd user ___
-
-// 			return this.signToken(user.id);
-// 		}
-// 		catch (error)
-// 		{
-// 			if (error instanceof Prisma.PrismaClientKnownRequestError)
-// 			{
-// 				if (error.code === 'P2002')
-// 				{
-// 					throw new ForbiddenException('Credentials taken');
-// 				}
-// 			}
-// 			throw error;
-// 		}
-// 	}
-
-
-
-
-// 	// _____    S I G N     I N     ______
-// 	// ___________________________________
- 
-// 	async signin(dto: AuthDto)
-// 	{
-// 		// ___ Find User by Email ___
-
-// 		const user = await this.prisma.user.findUnique
-// 		({
-// 			where: 
-// 			{
-// 				login_42: "",
-// 			},
-// 		});
-
-
-
-
-// 		// ___ If user does not exist throw exception ___
-
-// 		if (!user)
-// 			throw new ForbiddenException('Credentials incorrect'); 
-
-
-
-
-// 		// ___ Compare password ___
-
-// 		// const PasswordMatches = await argon.verify(user.hash, dto.password)
-
-
-
-
-// 		// ___ If password incorrect throw exception ___
-
-// 		// if (!PasswordMatches)
-// 		// 	throw new ForbiddenException('PW Credentials incorrect'); 
-
-
-
-// 		// ___ Send back the user ___
-
-// 		return this.signToken(user.id);
-// 	}
-
-// 	async signToken(userId: number) : Promise< {access_token: string} > {
-// 		const payload = {
-// 			sub: userId,
-// 		};
-
-// 		const secret = this.config.get('JWT_SECRET');
-		
-// 		const token = await this.jwt.signAsync(
-// 			payload,
-// 			{
-// 				expiresIn: '15m',
-// 				secret: secret,
-// 			}
-// 		);
-		
-		
-// 		return{
-// 			access_token: token, 
-// 		};
-// 	}
-// }

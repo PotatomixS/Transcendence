@@ -1,16 +1,15 @@
 import { Component } from '@angular/core';
-import { FormGroup, FormControl } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { FormControl } from '@angular/forms';
 import { Router } from '@angular/router'
 import { ChatService } from '../services/chat-service/chat.service';
 
 @Component({
-	selector: 'app-main-page-chat',
-	templateUrl: './main-page-chat.component.html',
-	styleUrls: ['./main-page-chat.component.css']
+	selector: 'app-admin-page',
+	templateUrl: './admin-page.component.html',
+	styleUrls: ['./admin-page.component.css']
 })
 
-export class MainPageChatComponent
+export class AdminPageComponent
 {
 	message: string = "";
 	messages: (String | null)[] = [];
@@ -24,30 +23,15 @@ export class MainPageChatComponent
 	
 	ngOnInit()
 	{
-		this.chatService.getMessages().subscribe((value) =>
+		this.chatService.getAdminMessages().subscribe((value) =>
 		{
-			if (value.other?.command)
-			{
-				switch(value.other.command)
-				{
-					case "Friend":
-						this.route.navigate(['/otherprofile', value.other.friend]);
-						break;
-					case "Spectate":
-						this.route.navigate(['/pong', value.other.match]);
-						break;
-				}
-			}
-			else
-			{
-				this.messages.push(value.user + ": " + value.message);
-			}
+			this.messages.push(value.user + ": " + value.message);
 		});
 	}
 	
 	sendMessage()
 	{
-		this.chatService.sendMessage(this.message);
+		this.chatService.sendAdminMessage(this.message);
 		this.message = '';
 	}
 	
@@ -67,10 +51,4 @@ export class MainPageChatComponent
 			}});
 		}
 	}
-}
-	
-interface value
-{
-	user: string
-	message: string
 }

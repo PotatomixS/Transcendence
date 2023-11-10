@@ -3,6 +3,7 @@ import { FormGroup, FormControl } from '@angular/forms';
 import { AuthService } from '../services/auth-service/auth.service';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { ProfileService } from '../services/profile-service/profile.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -24,7 +25,7 @@ export class LoginComponent
     Code6: new FormControl('')
   });
   
-  constructor(public authService: AuthService, public profileService: ProfileService)
+  constructor(public authService: AuthService, public profileService: ProfileService, private route: Router)
   {
     this.ShowFA = false;
     this.faActive = this.authService.faActive;
@@ -63,15 +64,20 @@ export class LoginComponent
       values.Code5 && values.Code6)
       {
         document.getElementById("code1")?.blur(); 
-        this.CodeForm.reset();
         this.authService.checkCode(this.profileService.profile.getValue().login_42, Code).subscribe(res =>
         {
           if (res?.response)
           {
             //ok
-            this.profileService.profile.next(res);
             this.authService.setToken(res.access_token);
+
+            this.profileService.getProfile();
+
             this.authService.logged.next(true);
+
+            this.profileService.initSocket();
+            
+            this.route.navigate(['/pong']);
           }
         });
       }

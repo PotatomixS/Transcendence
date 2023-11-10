@@ -14,9 +14,10 @@ import { InterceptorService,AuthService } from './services/auth-service/auth.ser
 import { ProfileService } from './services/profile-service/profile.service';
 import { OtherProfilePageComponent } from './otherprofile-page/otherprofile-page.component';
 import { LoadingPageComponent } from './loading-page/loading-page.component';
+import { AdminPageComponent } from './admin-page/admin-page.component';
 
 @NgModule({
-  declarations: [ AppComponent, LoginComponent, MainPageHeaderComponent, ProfilePageComponent, OtherProfilePageComponent, MainPageChatComponent, PongPageComponent, LoadingPageComponent ],
+  declarations: [ AppComponent, LoginComponent, MainPageHeaderComponent, ProfilePageComponent, OtherProfilePageComponent, MainPageChatComponent, PongPageComponent, LoadingPageComponent, AdminPageComponent ],
   imports: [ BrowserModule, AppRoutingModule, ReactiveFormsModule, HttpClientModule],
   providers: [
     {

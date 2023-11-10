@@ -40,6 +40,8 @@ model User {
 	// socket_id		Int
 
 	channelRol		String		@default("user")						// owner / admin / user
+	webRol			String		@default("user")						// owner / moderator / user
+	expelled		Boolean		@default(false)
 }
 
 model Friends {

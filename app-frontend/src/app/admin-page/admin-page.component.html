@@ -1,0 +1,6 @@
+<div class="main-chat">
+    <ul id="chat">
+        <li *ngFor="let m of messages">{{ m }}</li>
+    </ul>
+    <input type="text" class="message-box" id="mb" pattern="[\d]*" tabindex="2" placeholder="  message" autocomplete="on" [formControl]="MessageBox" (keydown)="onKeyDownMessageBox($event)">
+</div>

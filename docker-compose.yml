@@ -65,7 +65,7 @@ services:
 
   postgres:
     container_name: postgres
-    image: postgres:15-bullseye
+    image: postgres:bullseye
 
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}

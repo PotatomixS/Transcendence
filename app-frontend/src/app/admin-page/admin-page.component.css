@@ -1,0 +1,41 @@
+.main-chat {
+    position: absolute;
+    background-color: black;
+    right: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.main-chat ul
+{
+    position: relative;
+    width: 100%;
+    height: 94%;
+    margin: 0;
+    color: white;
+    overflow: scroll;
+    overflow-y: auto;
+    padding: 0;
+    list-style-type: none;
+    font-size: 100%;
+}
+
+.main-chat .message-box
+{
+    position: relative;
+    width: 100%;
+    height: 6%;
+    font-size: 100%;
+    color: white;
+    background-color: black;
+    box-sizing: border-box;
+    border-top: 2px solid white;
+    border-left: none;
+    border-bottom: 2px solid white;
+    border-right: none;
+}
+
+.main-chat .message-box:focus
+{
+    outline: none;
+}

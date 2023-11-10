@@ -13,6 +13,7 @@ export interface Profile {
   elo: number;
   wins: number;
   loses: number;
+  webRol: string;
 }
 
 export interface Match {
@@ -40,7 +41,8 @@ export class ProfileService {
       auth2FA: false,
       elo: 0,
       wins: 0,
-      loses: 0
+      loses: 0,
+      webRol: "user"
     });
   }
 

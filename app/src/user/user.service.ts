@@ -55,7 +55,8 @@ export class UserService
 			nickname: user.nickname,
 			socketId: user.socketId,
 			wins: wins,
-			loses: loses
+			loses: loses,
+			webRol: user.webRol
 		};
 	}
 

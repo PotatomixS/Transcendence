@@ -122,6 +122,28 @@ export class MyGateway
 			this.ft_send(body, socket);
 	}
 
+	@SubscribeMessage('newAdminMessage')
+	onNewAdminMessage(@MessageBody() body: any, @ConnectedSocket() socket: Socket)
+	{
+		const msg: string = String(body.message);
+		const words = body.message.split(' ');
+		
+		if (words[0] == "/deleteChannel")
+			this.ft_admin_delete_channel(body, socket);
+		else if (words[0] == "/banFromWeb")
+			this.ft_admin_ban(body, socket);
+		else if (words[0] == "/listAllChannels")
+			this.ft_admin_list(body, socket);
+		else if (words[0] == "/giveMod")
+			this.ft_admin_give_mod(body, socket);
+		else if (words[0] == "/removeMod")
+			this.ft_admin_remove_mod(body, socket);
+		else if (words[0] == "/help")
+			this.ft_admin_help(body, socket);
+		else
+			this.ft_admin_send(body, socket);
+	}
+
 	@SubscribeMessage('keymapChanges')
 	onKeymapChanges(@MessageBody() key: {key: string, keyStatus: boolean, room_id: string, player_id: number})
 	{
@@ -199,6 +221,9 @@ export class MyGateway
 		var status = "online";
 		if (user.status == "In game")
 			status = "In game";
+
+		if (user.status == "online" && user.socketId != "")
+			this.server.to(user.socketId).emit("expulsion");
 
 		await this.prisma.user.update
 		({
@@ -901,6 +926,104 @@ export class MyGateway
 			}
 		}
 	}
+
+	async ft_admin_delete_channel(body: any, socket: Socket)
+	{
+		const words = body.message.split(' ');
+
+		if (words < 2)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "/deleteChannel [channelName]",
+			});
+			return;
+		}
+	
+		const channel = await this.prisma.channel.findUnique
+		({
+			where:
+			{
+				Name: words[1]
+			},
+		});
+
+		if (!channel)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "Channel not found.",
+			});
+			return;
+		}
+
+		await this.prisma.channel.delete
+		({
+			where:
+			{
+				id: channel.id
+			},
+		});
+
+		const joinedUsers = await this.prisma.joinedChannels.findMany({
+			where: {
+				idChannel: channel.Name //Alex te odio por esto
+			}
+		});
+
+		await this.prisma.joinedChannels.deleteMany({
+			where: {
+				idChannel: channel.Name
+			}
+		});
+
+		for (const joinedUser of joinedUsers)
+		{
+			const user = await this.prisma.user.findUnique
+			({
+				where:
+				{
+					login_42: joinedUser.idUser // Y por esto también
+				},
+			});
+
+			if (!user)
+				continue;
+
+			await this.prisma.user.update
+			({
+				where:
+				{
+					id: user.id // Y por esto también
+				},
+				data:
+				{
+					channelRol: "user"
+				}
+			});
+
+			this.server.to(user.socketId).emit('onMessage',
+			{
+				user: "Server",
+				message: "The channel has been closed.",
+			});
+		}
+
+		await this.prisma.userMutedChannel.deleteMany({
+			where: {
+				idChannel: channel.Name
+			}
+		});
+
+		await this.prisma.usersBannedChannel.deleteMany({
+			where: {
+				idChannel: channel.Name
+			}
+		});
+	}
+
 	
 	async  ft_leave(body: any, socket: Socket)
 	{
@@ -1022,6 +1145,50 @@ export class MyGateway
 		for (const each_channel of all_channels)
 		{
 			this.server.to(socket.id).emit('onMessage',
+			{
+				user: "",
+				message: ("-   " + each_channel.Name),
+			});
+		}
+	}
+
+	async ft_admin_list(body: any, socket: Socket)
+	{
+		//              ______     buscar channels     ______
+
+		const this_user = await this.prisma.user.findUnique
+		({
+			where:
+			{
+				login_42: body.userName,
+			},
+		});
+
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage', {
+				user: 'Server',
+				message: "You don't exist, for some reason"
+			})
+			return;
+		}
+
+		const all_channels = await this.prisma.channel.findMany
+		({
+			where:
+			{
+			},
+		});
+		
+		this.server.to(socket.id).emit('onAdminMessage',
+		{
+			user: "",
+			message: "Channels:",
+		});
+		
+		for (const each_channel of all_channels)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
 			{
 				user: "",
 				message: ("-   " + each_channel.Name),
@@ -1817,6 +1984,206 @@ export class MyGateway
 					});
 				}
 			}
+		}
+	}
+
+	async ft_admin_ban(body: any, socket: Socket)
+	{
+		const words : string[] = body.message.split(' ');
+
+		if (words.length < 2)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "/banFromWeb [login_42]"
+			});
+			return;
+		}
+
+		const user = await this.prisma.user.findUnique({
+			where: {
+				login_42: words[1]
+			}
+		});
+
+		if (!user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "User login not found"
+			});
+			return;
+		}
+
+		if (user.webRol == "owner")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "You can't expell the owner"
+			});
+			return;
+		}
+
+		await this.prisma.user.update({
+			where: {
+				login_42: words[1]
+			},
+			data: {
+				expelled: true
+			}
+		});
+
+		this.server.to(user.socketId).emit('expulsion');
+
+		this.server.to(socket.id).emit('onAdminMessage',
+		{
+			user: "Server",
+			message: "User expulsion completed"
+		});
+	}
+
+	async ft_admin_give_mod(body: any, socket: Socket)
+	{
+		const words : string[] = body.message.split(' ');
+
+		if (words.length < 2)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "/giveMod [login_42]"
+			});
+			return;
+		}
+
+		const user = await this.prisma.user.findUnique({
+			where: {
+				login_42: words[1]
+			}
+		});
+
+		if (!user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "User login not found"
+			});
+			return;
+		}
+
+		if (user.webRol == "owner")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "You can't change the owner rol"
+			});
+			return;
+		}
+
+		await this.prisma.user.update({
+			where: {
+				login_42: words[1]
+			},
+			data: {
+				webRol: "moderator"
+			}
+		});
+
+		this.server.to(socket.id).emit('onAdminMessage',
+		{
+			user: "Server",
+			message: "User made web admin"
+		});
+	}
+
+	async ft_admin_remove_mod(body: any, socket: Socket)
+	{
+		const words : string[] = body.message.split(' ');
+
+		if (words.length < 2)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "/giveMod [login_42]"
+			});
+			return;
+		}
+
+		const user = await this.prisma.user.findUnique({
+			where: {
+				login_42: words[1]
+			}
+		});
+
+		if (!user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "User login not found"
+			});
+			return;
+		}
+
+		if (user.webRol == "owner")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "You can't change the owner rol"
+			});
+			return;
+		}
+
+		await this.prisma.user.update({
+			where: {
+				login_42: words[1]
+			},
+			data: {
+				webRol: "user"
+			}
+		});
+
+		this.server.to(socket.id).emit('onAdminMessage',
+		{
+			user: "Server",
+			message: "User removed from web admins"
+		});
+	}
+
+	async ft_admin_help(body: any, socket: Socket)
+	{
+		this.server.to(socket.id).emit('onAdminMessage',
+		{
+			user: "Server",
+			message: "/deleteChannel, /banFromWeb, /listAllChannels, /giveMod, /removeMod, /help"
+		});
+	}
+
+	async ft_admin_send(body: any, socket: Socket)
+	{
+		const users = await this.prisma.user.findMany({
+			where: {
+				OR: [
+					{webRol: "owner"},
+					{webRol: "moderator"}
+				]
+			}
+		});
+
+		for (const user of users)
+		{
+			this.server.to(user.socketId).emit('onAdminMessage',
+			{
+				user: body.userName,
+				message: body.message
+			});
 		}
 	}
 

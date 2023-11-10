@@ -20,24 +20,28 @@ export class MainPageHeaderComponent {
     }
     ngOnInit()
     {
-      this.service.profile.subscribe(res => 
-        {
-          this.service.getProfileImage(res.img_str).subscribe(
-            imgBlob => {
-              this.service.createImageFromBlob(imgBlob).then(
-                result => {
-                  this.profileImage = result;
-                },
-                err => {
-                }
-              )
-          });
+      this.service.profile.subscribe(res => {
+        this.service.getProfileImage(res.img_str).subscribe(
+          imgBlob => {
+            this.service.createImageFromBlob(imgBlob).then(
+              result => {
+                this.profileImage = result;
+              },
+              err => {
+              }
+            )
         });
+      });
+
+      this.service.socket.on('expulsion', () => {
+        this.Logout();
+      });
     }
 
     Logout()
     {
       this.auth.setToken("");
+      this.auth.faActive.next(false);
       this.auth.logged.next(false);
       this.service.socket.disconnect();
     }
