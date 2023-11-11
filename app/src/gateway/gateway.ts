@@ -144,6 +144,10 @@ export class MyGateway
 			this.ft_admin_remove_mod(body, socket);
 		else if (words[0] == "/help")
 			this.ft_admin_help(body, socket);
+		else if  (words[0] == "/giveChannelAdmin")
+			this.ft_admin_giveChannelAdmin(body, socket);
+		else if  (words[0] == "/revokeChannelAdmin")
+			this.ft_admin_revokeChannelAdmin(body, socket);
 		else
 			this.ft_admin_send(body, socket);
 	}
@@ -934,8 +938,8 @@ export class MyGateway
 	async ft_admin_delete_channel(body: any, socket: Socket)
 	{
 		const words = body.message.split(' ');
-
-		if (words < 2)
+		
+ 		if (words.leng < 2)
 		{
 			this.server.to(socket.id).emit('onAdminMessage',
 			{
@@ -944,6 +948,31 @@ export class MyGateway
 			});
 			return;
 		}
+
+		const this_user = await this.prisma.user.findUnique({
+			where: {
+				login_42: body.userName,
+			}
+		});
+        if (!this_user)
+       {
+           this.server.to(socket.id).emit('onAdminMessage',
+           {
+               user: "Server",
+               message: "Your login not found"
+           });
+           return;
+       }
+       if (this_user.webRol == "user")
+       {
+           this.server.to(socket.id).emit('onAdminMessage',
+           {
+               user: "Server",
+               message: "You don't have the privileges."
+           });
+           return;
+       }
+
 	
 		const channel = await this.prisma.channel.findUnique
 		({
@@ -1166,7 +1195,7 @@ export class MyGateway
 			{
 				login_42: body.userName,
 			},
-		});
+	  	});
 
 		if (!this_user)
 		{
@@ -1176,7 +1205,27 @@ export class MyGateway
 			})
 			return;
 		}
-
+	
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "Your login not found"
+			});
+			return;
+		}
+ 
+		if (this_user.webRol == "user")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "You don't have the privileges."
+			});
+			return;
+		}
+ 
 		const all_channels = await this.prisma.channel.findMany
 		({
 			where:
@@ -1893,7 +1942,15 @@ export class MyGateway
 			})
 			return;
 		}
-
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "Your login not found"
+			});
+			return;
+		}
 		const joinedChannels = await this.prisma.joinedChannels.findMany
 		({
 			where:
@@ -1991,6 +2048,70 @@ export class MyGateway
 		}
 	}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	async ft_admin_ban(body: any, socket: Socket)
 	{
 		const words : string[] = body.message.split(' ');
@@ -2011,6 +2132,12 @@ export class MyGateway
 			}
 		});
 
+		const this_user = await this.prisma.user.findUnique({
+			where: {
+				login_42: body.userName,
+			}
+		});
+
 		if (!user)
 		{
 			this.server.to(socket.id).emit('onAdminMessage',
@@ -2021,6 +2148,24 @@ export class MyGateway
 			return;
 		}
 
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "Your login not found"
+			});
+			return;
+		}
+		if (this_user.webRol == "user")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "You don't have the privileges."
+			});
+			return;
+		}
 		if (user.webRol == "owner")
 		{
 			this.server.to(socket.id).emit('onAdminMessage',
@@ -2030,7 +2175,6 @@ export class MyGateway
 			});
 			return;
 		}
-
 		await this.prisma.user.update({
 			where: {
 				login_42: words[1]
@@ -2062,19 +2206,31 @@ export class MyGateway
 			});
 			return;
 		}
-
 		const user = await this.prisma.user.findUnique({
 			where: {
 				login_42: words[1]
 			}
 		});
-
+		const this_user = await this.prisma.user.findUnique({
+			where: {
+				login_42: body.userName,
+			}
+		});
 		if (!user)
 		{
 			this.server.to(socket.id).emit('onAdminMessage',
 			{
 				user: "Server",
 				message: "User login not found"
+			});
+			return;
+		}
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "Your login not found"
 			});
 			return;
 		}
@@ -2088,7 +2244,24 @@ export class MyGateway
 			});
 			return;
 		}
-
+		if (user.webRol == "moderator")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "Alredy a moderator"
+			});
+			return;
+		}
+		if (this_user.webRol == "user")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "You don't have the privileges."
+			});
+			return;
+		}
 		await this.prisma.user.update({
 			where: {
 				id: user.id
@@ -2097,7 +2270,6 @@ export class MyGateway
 				webRol: "moderator"
 			}
 		});
-
 		this.server.to(socket.id).emit('onAdminMessage',
 		{
 			user: "Server",
@@ -2116,7 +2288,7 @@ export class MyGateway
 			this.server.to(socket.id).emit('onAdminMessage',
 			{
 				user: "Server",
-				message: "/giveMod [login_42]"
+				message: "/removeMod [login_42]"
 			});
 			return;
 		}
@@ -2124,6 +2296,12 @@ export class MyGateway
 		const user = await this.prisma.user.findUnique({
 			where: {
 				login_42: words[1]
+			}
+		});
+		
+		const this_user = await this.prisma.user.findUnique({
+			where: {
+				login_42: body.userName,
 			}
 		});
 
@@ -2136,6 +2314,34 @@ export class MyGateway
 			});
 			return;
 		}
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "Your login not found"
+			});
+			return;
+		}
+		if (this_user.webRol == "user")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "You don't have the privileges."
+			});
+			return;
+		}
+		if (user.webRol == "user")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "This user is not a mod."
+			});
+			return;
+		}		
+
 
 		if (user.webRol == "owner")
 		{
@@ -2167,10 +2373,33 @@ export class MyGateway
 
 	async ft_admin_help(body: any, socket: Socket)
 	{
+		const this_user = await this.prisma.user.findUnique({
+			where: {
+				login_42: body.userName,
+			}
+		});
+        if (!this_user)
+       {
+           this.server.to(socket.id).emit('onAdminMessage',
+           {
+               user: "Server",
+               message: "Your login not found"
+           });
+           return;
+       }
+       if (this_user.webRol == "user")
+       {
+           this.server.to(socket.id).emit('onAdminMessage',
+           {
+               user: "Server",
+               message: "You don't have the privileges."
+           });
+           return;
+       }
 		this.server.to(socket.id).emit('onAdminMessage',
 		{
 			user: "Server",
-			message: "/deleteChannel, /banFromWeb, /listAllChannels, /giveMod, /removeMod, /help"
+			message: "/deleteChannel, /banFromWeb, /listAllChannels, /giveMod, /removeMod, /giveChannelAdmin, /revokeChannelAdmin, /help"
 		});
 	}
 
@@ -2220,6 +2449,311 @@ export class MyGateway
 			});
 		}
 	}
+
+	async ft_admin_giveChannelAdmin(body: any, socket: Socket)
+	{
+		const words : string[] = body.message.split(' ');
+
+		if (words.length < 3)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "/giveChannelAdmin [user] [channel]"
+			});
+			return;
+		}
+
+		// Check that the users exist
+		const user = await this.prisma.user.findUnique({
+			where: {
+				login_42: words[1]
+			}
+		});
+		const this_user = await this.prisma.user.findUnique({
+			where: {
+				login_42: body.userName,
+			}
+		});
+		if (!user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "User login not found"
+			});
+			return;
+		}
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "Your login not found"
+			});
+			return;
+		}
+		// Check that the user that ask is an Admin
+		if (this_user.webRol == "user")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "You don't have the privileges."
+			});
+			return;
+		}
+		// Look for the Channel and the JoinedChannel
+		const channel_exists = await this.prisma.channel.findFirst
+		({
+			where:
+			{
+				Name: words[2]
+			}
+		});
+
+		const is_on_channel = await this.prisma.joinedChannels.findUnique
+		({
+			where:
+			{
+				idUser: words[1],
+				idChannel: words[2]
+			},
+		});
+ 
+		// Check that all conditions meet to be an admin
+		if (!channel_exists)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "This channel doesn't exists."
+			});
+			return;
+		}
+		if (!is_on_channel)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "This user is not in the channel."
+			});
+			return;
+		}
+		if (user.channelRol == "admin" || user.channelRol == "owner")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "This user alredy has privilages."
+			});
+			return;
+		}
+		
+		// Make admin
+		await this.prisma.user.update({
+			where: {
+				login_42: user.login_42
+			},
+			data: {
+				channelRol: "admin"
+			}
+		});
+
+		this.server.to(user.socketId).emit('onMessage',
+		{
+			user: "Server",
+			message: "You are now a Channel Admin thank to the Web Admins"
+		});
+
+		this.server.to(socket.id).emit('onAdminMessage',
+		{
+			user: "Server",
+			message: "Admin channel privileges given"
+		});
+	}
+
+	async ft_admin_revokeChannelAdmin(body: any, socket: Socket)
+	{
+		const words : string[] = body.message.split(' ');
+
+		if (words.length < 3)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "/revokeChannelAdmin [user] [channel]"
+			});
+			return;
+		}
+
+		// Check that the users exist
+		const user = await this.prisma.user.findUnique({
+			where: {
+				login_42: words[1]
+			}
+		});
+		const this_user = await this.prisma.user.findUnique({
+			where: {
+				login_42: body.userName,
+			}
+		});
+		if (!user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "User login not found"
+			});
+			return;
+		}
+		if (!this_user)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "Your login not found"
+			});
+			return;
+		}
+		// Check that the user that ask is an Admin
+		if (this_user.webRol == "user")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "You don't have the privileges."
+			});
+			return;
+		}
+		// Look for the Channel and the JoinedChannel
+		const channel_exists = await this.prisma.channel.findFirst
+		({
+			where:
+			{
+				Name: words[2]
+			}
+		});
+
+		const is_on_channel = await this.prisma.joinedChannels.findUnique
+		({
+			where:
+			{
+				idUser: words[1],
+				idChannel: words[2]
+			},
+		});
+ 
+		// Check that all conditions meet to be an admin
+		if (!channel_exists)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "This channel doesn't exixsts."
+			});
+			return;
+		}
+		if (!is_on_channel)
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "This user is not in the channel."
+			});
+			return;
+		}
+		if (user.channelRol == "user")
+		{
+			this.server.to(socket.id).emit('onAdminMessage',
+			{
+				user: "Server",
+				message: "This user alredy doesn't have privilages."
+			});
+			return;
+		}
+		
+		// Make admin
+		await this.prisma.user.update({
+			where: {
+				login_42: user.login_42
+			},
+			data: {
+				channelRol: "user"
+			}
+		});
+
+		this.server.to(user.socketId).emit('onMessage',
+		{
+			user: "Server",
+			message: "You are now a simple Channel User thank to the Web Admins >:("
+		});
+
+		this.server.to(socket.id).emit('onAdminMessage',
+		{
+			user: "Server",
+			message: "Admin channel privileges revoked"
+		});
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	async ft_spectate(body: any, socket: Socket)
 	{
