@@ -122,6 +122,8 @@ export class MyGateway
 			this.ft_challenge(body, socket);
 		else if (words[0] == "/help")
 			this.ft_help(body, socket);
+		else if (words[0] == "/rules")
+			this.ft_rules(body, socket);
 		else
 			this.ft_send(body, socket);
 	}
@@ -1915,6 +1917,14 @@ export class MyGateway
 			user: '',
 			message: "/challenge [User] ?wall"
 		});
+	}
+
+	async ft_rules(body: any, socket: Socket)
+	{
+		this.server.to(socket.id).emit('onMessage', {
+			user: 'Server',
+			message: "Reglas: Golpea la pelota para que traspase las defensas de tu contrincante y conseguir puntos, el primero que llegue a 10 puntos gana la partida.\nControles: subir con [W]/[upArrow], bajar con [S]/[downArrow]."
+		})
 	}
 
 	async ft_send(body: any, socket: Socket)
