@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Res, UseGuards, Body, UseInterceptors, UploadedFile, StreamableFile, Param } from '@nestjs/common';
+import { Controller, Get, Post, Res, UseGuards, Body, UseInterceptors, UploadedFile, StreamableFile, Param, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, HttpStatus } from '@nestjs/common';
 import { JwtGuard } from 'src/auth/guard';
 import { UserService } from './user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express, Response } from 'express';
 import { createReadStream } from 'fs';
 import { join } from 'path';
-import { diskStorage } from "multer";
+import { MulterError, diskStorage } from "multer";
 import { extname } from "path";
 
 @UseGuards(JwtGuard)
@@ -78,8 +78,15 @@ export class UserController {
 
     @Post('setProfileInfoImage')
     @UseInterceptors(FileInterceptor('file', {
+        fileFilter: (req, file, cb) => {
+            if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
+                cb(null, true);
+            else {
+                cb(null, false);
+            }
+        },
         dest: "upload/images/",
-        storage
+        storage,
     }))
         uploadFile(@UploadedFile() file: Express.Multer.File)
     {

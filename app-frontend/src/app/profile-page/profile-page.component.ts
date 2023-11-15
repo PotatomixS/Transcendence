@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Profile, ProfileService, Match } from '../services/profile-service/profile.service';
-import { Observable } from 'rxjs';
+import { Observable, catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-profile-page',
@@ -83,7 +83,14 @@ export class ProfilePageComponent implements OnInit {
       fd.append('file', this.image, this.image.name);
       
       this.service.updateProfileImage(fd).subscribe(res => {
-        this.updateProfile(this.profileForm.value, res.filename);
+          if (!res)
+            alert("El archivo no es un jpg/jpeg/png o pesa mas de 256 megabytes");
+          else
+            this.updateProfile(this.profileForm.value, res.filename);
+        },
+        err => {
+          console.log(err);
+          alert("El archivo no es un jpg/jpeg/png o pesa mas de 256 megabytes")
       });
     }
     else

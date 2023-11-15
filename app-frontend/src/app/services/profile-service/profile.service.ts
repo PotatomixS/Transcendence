@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, catchError } from 'rxjs';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { io } from 'socket.io-client';
 
