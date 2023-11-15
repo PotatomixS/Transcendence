@@ -3138,8 +3138,10 @@ class gameRoom
 		const winnerId = (this.pos.player1_p > 9) ? this.idPlayer1 : this.idPlayer2;
 		const looserId = (this.pos.player1_p > 9) ? this.idPlayer2 : this.idPlayer1;
 
-		this.socket1.leave(this.roomName);
-		this.socket2.leave(this.roomName);
+		this.server.socketsLeave(this.roomName);
+
+		//this.socket1.leave(this.roomName);
+		//this.socket2.leave(this.roomName);
 		
 		this.gateway.ft_finishGame({
 			id: parseInt(this.roomName),

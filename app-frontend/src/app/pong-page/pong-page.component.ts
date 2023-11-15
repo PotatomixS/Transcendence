@@ -61,6 +61,9 @@ export class PongPageComponent implements OnInit
 
     this.profileService.socket.on("gameChanges", (data: any) =>
     {
+      this.waiting = false;
+      this.matchPlaying = true;
+      
       this.context.clearRect
       (
         0,
