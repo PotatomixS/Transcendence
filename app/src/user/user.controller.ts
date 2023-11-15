@@ -79,8 +79,15 @@ export class UserController {
     @Post('setProfileInfoImage')
     @UseInterceptors(FileInterceptor('file', {
         fileFilter: (req, file, cb) => {
+            const fileSize = parseInt(req.headers["content-length"])
+
             if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
-                cb(null, true);
+            {
+                if (fileSize <= 256 * 1024 * 1024)
+                    cb(null, true);
+                else
+                    cb(null, false);
+            }
             else {
                 cb(null, false);
             }

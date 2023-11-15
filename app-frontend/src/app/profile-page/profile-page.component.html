@@ -14,7 +14,7 @@
             <br>
             <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
                 <label for="nickname">Nombre de usuario: </label>
-                <input id="nickname" type="text" formControlName="nickname">
+                <input id="nickname" type="text" formControlName="nickname" maxlength="25">
                 <br>
                 <label for="auth2FA">Autentificación en dos pasos: </label>
                 <input id="auth2FA" type="checkbox" formControlName="auth2FA">
