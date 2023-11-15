@@ -2897,6 +2897,15 @@ export class MyGateway
 			return;
 		}
 
+		if (user_to_challenge.id == my_user.id)
+		{
+			this.server.to(socket.id).emit('onMessage', {
+				user: 'Server',
+				message: "You can't challenge yourself"
+			})
+			return;
+		}
+
 		var gameMode = "normal";
 		if (words.length >= 3)
 		{

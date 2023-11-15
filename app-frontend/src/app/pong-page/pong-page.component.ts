@@ -39,10 +39,7 @@ export class PongPageComponent implements OnInit
       this.draw2.bind(this), this.draw3.bind(this), this.draw4.bind(this),
       this.draw5.bind(this), this.draw6.bind(this), this.draw7.bind(this),
       this.draw8.bind(this), this.draw9.bind(this)];
-  }
-      
-  ngOnInit()
-  {
+
     this.profileService.socket.on("StartMatch", () => {
       this.waiting = false;
       this.matchPlaying = true;
@@ -62,6 +59,42 @@ export class PongPageComponent implements OnInit
       });
     });
 
+    this.profileService.socket.on("gameChanges", (data: any) =>
+    {
+      this.context.clearRect
+      (
+        0,
+        0,
+        this.gameCanvas.nativeElement.width,
+        this.gameCanvas.nativeElement.height
+      );
+      if (data.wall_status == true)
+        this.context.fillRect(data.wall_x, data.wall_y, 15, 140);
+      this.context.fillRect(data.player1_x, data.player1_y, 15, 70);
+      this.context.fillRect(data.player2_x, data.player2_y, 15, 70);
+      this.context.fillRect(data.ball_x, data.ball_y, 20, 20)
+      for(var i = 0; i < 960; i += 24)
+      {
+        this.context.fillRect(635, i, 5, 10);
+      }
+      this.drawPoints(data.player1_p, data.player2_p);
+    })
+
+    this.profileService.socket.on("gameFinished", () =>{
+      if (this.matchPlaying == true)
+      {
+        this.profileService.getChallenges().subscribe(challenges => {
+          this.challenges = challenges;
+        });
+        
+        this.matchPlaying = false;
+        this.waiting = false;
+      }
+    });
+  }
+      
+  ngOnInit()
+  {
     if (!this.watch)
     {
       this.profileService.getOnMatch().subscribe(res => {
@@ -170,40 +203,7 @@ export class PongPageComponent implements OnInit
 
   loadMatch()
   {
-    this.profileService.socket.on("gameChanges", (data: any) =>
-    {
-      this.context.clearRect
-      (
-        0,
-        0,
-        this.gameCanvas.nativeElement.width,
-        this.gameCanvas.nativeElement.height
-      );
-      if (data.wall_status == true)
-        this.context.fillRect(data.wall_x, data.wall_y, 15, 140);
-      this.context.fillRect(data.player1_x, data.player1_y, 15, 70);
-      this.context.fillRect(data.player2_x, data.player2_y, 15, 70);
-      this.context.fillRect(data.ball_x, data.ball_y, 20, 20)
-      for(var i = 0; i < 960; i += 24)
-      {
-        this.context.fillRect(635, i, 5, 10);
-      }
-      this.drawPoints(data.player1_p, data.player2_p);
-    })
-
-    this.profileService.socket.on("gameFinished", () =>{
-      if (this.matchPlaying == true)
-      {
-        this.profileService.getChallenges().subscribe(challenges => {
-          this.challenges = challenges;
-        });
-        
-        this.matchPlaying = false;
-        this.waiting = false;
-        
-        alert("Game finished!");
-      }
-    });
+    
   }
   
   drawPoints(points1: number, points2: number)
