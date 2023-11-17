@@ -55,6 +55,15 @@ export class MyGateway
 		const user_id : number = body.user_id;
 		const roomName : string = body.room_id.toString();
 
+		var first = true;
+		socket.rooms.forEach(function(value)
+		{
+			if (first == true)
+				first = false;
+			else
+				socket.leave(value);
+		});
+
 		socket.join(roomName);
 
 		if (!gameRooms[roomName])
@@ -2932,6 +2941,15 @@ export class MyGateway
 		});
 
 		var roomName : string = game.id.toString();
+		var first = true;
+		socket.rooms.forEach(function(value)
+		{
+			if (first == true)
+				first = false;
+			else
+				socket.leave(value);
+		});
+
 		socket.join(roomName);
 		gameRooms[roomName] = new gameRoom(roomName, this.server, socket, my_user.id, (gameMode == "wall"), this);
 
